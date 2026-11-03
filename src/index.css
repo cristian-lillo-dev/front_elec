@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/* Scrollbar de terminal para el mapa */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #070e1c;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #1b3662;
+  border-radius: 4px;
+}
