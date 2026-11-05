@@ -3,6 +3,11 @@ import Particles from '@tsparticles/react';
 import { loadSlim } from '@tsparticles/slim';
 
 // =========================================================================
+// CONFIGURACIÓN DE API
+// =========================================================================
+const API_BASE_URL = 'https://backelec-production.up.railway.app/api';
+
+// =========================================================================
 // CONSTANTES DE DISTRIBUCIÓN Y ESPACIADO
 // =========================================================================
 const PASO_Y = 120;
@@ -193,8 +198,8 @@ function ModalLeccionDuolingo({ unidad, leccion, onClose, onCompletar }) {
 
   useEffect(() => {
     Promise.all([
-      fetch(`http://127.0.0.1:8000/api/paginas/?leccion_id=${leccion.id}`).then(res => res.json()),
-      fetch(`http://127.0.0.1:8000/api/preguntas/?leccion_id=${leccion.id}`).then(res => res.json())
+      fetch(`${API_BASE_URL}/paginas/?leccion_id=${leccion.id}`).then(res => res.json()),
+      fetch(`${API_BASE_URL}/preguntas/?leccion_id=${leccion.id}`).then(res => res.json())
     ])
       .then(([dataPaginas, dataPreguntas]) => {
         setPaginas(dataPaginas);
@@ -448,7 +453,7 @@ export default function MapaRutaRIC() {
   }, []);
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/unidades/?ordering=orden')
+    fetch(`${API_BASE_URL}/unidades/?ordering=orden`)
       .then((res) => res.json())
       .then((data) => {
         setUnidades(data);
