@@ -3,7 +3,7 @@ import Particles from '@tsparticles/react';
 import { loadSlim } from '@tsparticles/slim';
 
 // =========================================================================
-// CONFIGURACIÓN DE API
+// CONFIGURACIÓN DE API (Apunta a tu Backend Django / Railway)
 // =========================================================================
 const API_BASE_URL = 'https://backelec-production.up.railway.app/api';
 
@@ -101,7 +101,6 @@ const NodoRuta = memo(({ item, idx, isHovered, onHover, onSelect, esModoLeccion 
   const yPos = 45 + idx * PASO_Y;
   const numCodigo = String(item.orden || idx + 1).padStart(2, '0');
 
-  // Lógica de jugabilidad real basada en propiedades del backend o índice
   const completado = item.completada || idx < 2;
   const activo = item.activo || (idx === 2 && !completado);
   const bloqueado = item.bloqueado ?? (idx > 2 && !completado);
@@ -180,7 +179,7 @@ const NodoRuta = memo(({ item, idx, isHovered, onHover, onSelect, esModoLeccion 
 });
 
 // =========================================================================
-// MODAL DE LECCIÓN DUOLINGO
+// MODAL DE LECCIÓN DUOLINGO (Conectado a /paginas/ y /preguntas/)
 // =========================================================================
 function ModalLeccionDuolingo({ unidad, leccion, onClose, onCompletar }) {
   const [paginas, setPaginas] = useState([]);
@@ -196,6 +195,7 @@ function ModalLeccionDuolingo({ unidad, leccion, onClose, onCompletar }) {
   const [aciertos, setAciertos] = useState(0);
 
   useEffect(() => {
+    // Petición directa a tus ViewSets de Django filtrados por leccion_id
     Promise.all([
       fetch(`${API_BASE_URL}/paginas/?leccion_id=${leccion.id}`).then(res => res.json()),
       fetch(`${API_BASE_URL}/preguntas/?leccion_id=${leccion.id}`).then(res => res.json())
@@ -206,7 +206,7 @@ function ModalLeccionDuolingo({ unidad, leccion, onClose, onCompletar }) {
         setCargando(false);
       })
       .catch(err => {
-        console.warn('Usando datos de respaldo locales:', err);
+        console.warn('Error al conectar con la API, usando respaldo local:', err);
         setPaginas([
           { id: 1, numero_pagina: 1, contenidos: [{ id: 1, texto: `Introducción técnica al módulo ${leccion.nombre}. Fundamentos normativos SEC.` }] },
           { id: 2, numero_pagina: 2, contenidos: [{ id: 2, texto: 'Criterios de seguridad, restricciones y montaje reglamentario.' }] }
@@ -437,7 +437,6 @@ function LandingTiuqueTec({ onIngresar, onAbrirAuth }) {
   return (
     <div className="relative w-full min-h-screen bg-[#040914] text-slate-100 font-sans flex flex-col items-center justify-center p-6 select-none overflow-hidden">
       
-      {/* Barra de Navegación Superior con Botones de Auth */}
       <header className="absolute top-0 inset-x-0 p-6 flex justify-between items-center max-w-5xl mx-auto w-full z-20">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-cyan-950 border border-cyan-400 flex items-center justify-center text-xl shadow-[0_0_15px_#00f0ff]">
@@ -464,9 +463,7 @@ function LandingTiuqueTec({ onIngresar, onAbrirAuth }) {
         </div>
       </header>
 
-      {/* Contenido Principal Landing */}
       <main className="relative z-15 flex flex-col items-center text-center max-w-2xl mx-auto mt-16 gap-6">
-        
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-950/70 border border-cyan-500/40 text-cyan-300 text-xs font-mono shadow-[0_0_15px_rgba(0,240,255,0.2)]">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
           PLATAFORMA GAMIFICADA DE NORMATIVA ELÉCTRICA SEC
@@ -488,10 +485,8 @@ function LandingTiuqueTec({ onIngresar, onAbrirAuth }) {
             <span>⚡ EXPLORAR RUTA INTERACTIVA</span>
           </button>
         </div>
-
       </main>
 
-      {/* Footer de Landing */}
       <footer className="absolute bottom-4 text-center text-[10px] text-slate-500 font-mono z-10">
         [ELECTROLEARN // SISTEMA OFICIAL DE CAPACITACIÓN TÉCNICA]
       </footer>
@@ -500,7 +495,7 @@ function LandingTiuqueTec({ onIngresar, onAbrirAuth }) {
 }
 
 // =========================================================================
-// MODAL DE AUTENTICACIÓN (LOGIN / REGISTRO)
+// MODAL DE AUTENTICACIÓN
 // =========================================================================
 function ModalAuth({ tipo, onClose, onLoginExitoso }) {
   const [email, setEmail] = useState('');
@@ -508,7 +503,6 @@ function ModalAuth({ tipo, onClose, onLoginExitoso }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Aquí puedes conectar tu API de login/registro si la tienes
     onLoginExitoso();
   };
 
@@ -574,7 +568,7 @@ function ModalAuth({ tipo, onClose, onLoginExitoso }) {
 // =========================================================================
 export default function MapaRutaRIC() {
   const [sesionIniciada, setSesionIniciada] = useState(false);
-  const [modalAuthTipo, setModalAuthTipo] = useState(null); // 'login' | 'registro' | null
+  const [modalAuthTipo, setModalAuthTipo] = useState(null);
 
   const [unidades, setUnidades] = useState([]);
   const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
@@ -586,6 +580,7 @@ export default function MapaRutaRIC() {
     await loadSlim(engine);
   }, []);
 
+  // Carga de unidades desde tu Django API endpoint `/unidades/`
   useEffect(() => {
     fetch(`${API_BASE_URL}/unidades/?ordering=orden`)
       .then((res) => res.json())
@@ -594,7 +589,7 @@ export default function MapaRutaRIC() {
         setCargando(false);
       })
       .catch((err) => {
-        console.warn('Cargando pliegos demostrativos:', err);
+        console.warn('Usando unidades de respaldo locales:', err);
         setUnidades([
           { id: 1, orden: 1, nombre: 'Empalmes', descripcion: 'Condiciones de conexión y cajas de derivación.', lecciones: [{ id: 101, orden: 1, nombre: 'Acometidas' }, { id: 102, orden: 2, nombre: 'Protecciones' }] },
           { id: 2, orden: 2, nombre: 'Tableros', descripcion: 'Especificaciones de gabinetes y rotulados.' },
@@ -645,7 +640,6 @@ export default function MapaRutaRIC() {
     }
   }, [unidadSeleccionada]);
 
-  // Si no ha iniciado sesión o no ha presionado explorar, mostramos la Landing
   if (!sesionIniciada) {
     return (
       <>
