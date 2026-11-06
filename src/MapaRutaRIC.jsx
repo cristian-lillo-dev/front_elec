@@ -101,9 +101,10 @@ const NodoRuta = memo(({ item, idx, isHovered, onHover, onSelect, esModoLeccion 
   const yPos = 45 + idx * PASO_Y;
   const numCodigo = String(item.orden || idx + 1).padStart(2, '0');
 
-  const completado = idx < 2;
-  const activo = idx === 2;
-  const bloqueado = idx > 2;
+  // Lógica de jugabilidad real basada en propiedades del backend o índice
+  const completado = item.completada || idx < 2;
+  const activo = item.activo || (idx === 2 && !completado);
+  const bloqueado = item.bloqueado ?? (idx > 2 && !completado);
 
   return (
     <div
@@ -112,10 +113,10 @@ const NodoRuta = memo(({ item, idx, isHovered, onHover, onSelect, esModoLeccion 
         top: `${yPos}px`,
         transform: 'translate(-50%, -50%)',
       }}
-      className="absolute z-10 flex flex-col items-center group cursor-pointer"
+      className={`absolute z-10 flex flex-col items-center group ${bloqueado ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
       onMouseEnter={() => onHover(item)}
       onMouseLeave={() => onHover(null)}
-      onClick={() => onSelect(item)}
+      onClick={() => !bloqueado && onSelect(item)}
     >
       {activo && (
         <div className="absolute -top-11 flex flex-col items-center animate-bounce z-20">
@@ -152,16 +153,14 @@ const NodoRuta = memo(({ item, idx, isHovered, onHover, onSelect, esModoLeccion 
               ? 'bg-gradient-to-b from-emerald-400 to-emerald-600 border-[#044a36] shadow-[0_6px_0_#064e3b,0_10px_20px_rgba(16,185,129,0.35)] text-white'
               : activo
               ? 'bg-gradient-to-b from-cyan-300 to-cyan-500 border-[#0a586d] shadow-[0_6px_0_#0e7490,0_12px_25px_rgba(6,182,212,0.5)] text-slate-950 scale-105'
-              : 'bg-gradient-to-b from-slate-700 to-slate-800 border-[#1e293b] shadow-[0_5px_0_#0f172a] text-slate-400 opacity-80 group-hover:opacity-100'
+              : 'bg-gradient-to-b from-slate-700 to-slate-800 border-[#1e293b] shadow-[0_5px_0_#0f172a] text-slate-400'
           }`}
         >
           <div className="absolute top-1.5 inset-x-3 h-2.5 bg-white/25 rounded-full blur-[0.5px]" />
           <span className="text-lg filter drop-shadow">
             {completado ? '✓' : activo ? '⚡' : bloqueado ? '🔒' : '★'}
           </span>
-          <span className={`text-[8px] font-semibold tracking-wider ${
-            activo ? 'text-slate-900' : 'text-white/90'
-          }`}>
+          <span className={`text-[8px] font-semibold tracking-wider ${activo ? 'text-slate-900' : 'text-white/90'}`}>
             {esModoLeccion ? `M-${numCodigo}` : `RIC-${numCodigo}`}
           </span>
         </div>
@@ -181,14 +180,14 @@ const NodoRuta = memo(({ item, idx, isHovered, onHover, onSelect, esModoLeccion 
 });
 
 // =========================================================================
-// INTERFAZ DE LECCIÓN Y EVALUACIÓN ESTILO DUOLINGO CYBERPUNK
+// MODAL DE LECCIÓN DUOLINGO
 // =========================================================================
 function ModalLeccionDuolingo({ unidad, leccion, onClose, onCompletar }) {
   const [paginas, setPaginas] = useState([]);
   const [preguntas, setPreguntas] = useState([]);
   const [cargando, setCargando] = useState(true);
 
-  const [fase, setFase] = useState('teoria'); // 'teoria' | 'preguntas' | 'resultado'
+  const [fase, setFase] = useState('teoria'); 
   const [paginaActualIdx, setPaginaActualIdx] = useState(0);
   const [preguntaActualIdx, setPreguntaActualIdx] = useState(0);
   
@@ -273,11 +272,7 @@ function ModalLeccionDuolingo({ unidad, leccion, onClose, onCompletar }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-[#040914]/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 sm:p-6 overflow-y-auto select-none">
-      
-      {/* Contenedor principal con centrado y scroll si excede el alto */}
       <div className="w-full max-w-xl my-auto flex flex-col gap-4">
-        
-        {/* Barra superior de progreso y salir */}
         <div className="w-full flex items-center justify-between gap-4">
           <button
             onClick={onClose}
@@ -304,9 +299,7 @@ function ModalLeccionDuolingo({ unidad, leccion, onClose, onCompletar }) {
           </div>
         </div>
 
-        {/* Tarjeta del Modal con soporte para scroll interno si las opciones son largas */}
         <div className="w-full bg-[#09152b] border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-[0_15px_40px_rgba(0,0,0,0.6)] flex flex-col relative max-h-[75vh] overflow-y-auto custom-scrollbar">
-          
           {fase === 'teoria' && paginaActual && (
             <div className="flex flex-col">
               <div className="flex items-center justify-between mb-4">
@@ -427,7 +420,6 @@ function ModalLeccionDuolingo({ unidad, leccion, onClose, onCompletar }) {
               </button>
             </div>
           )}
-
         </div>
 
         <footer className="w-full text-center text-[10px] text-slate-500 font-mono">
@@ -439,9 +431,151 @@ function ModalLeccionDuolingo({ unidad, leccion, onClose, onCompletar }) {
 }
 
 // =========================================================================
-// COMPONENTE PRINCIPAL
+// COMPONENTE DE LANDING / PANTALLA PREVIA Y AUTENTICACIÓN
+// =========================================================================
+function LandingTiuqueTec({ onIngresar, onAbrirAuth }) {
+  return (
+    <div className="relative w-full min-h-screen bg-[#040914] text-slate-100 font-sans flex flex-col items-center justify-center p-6 select-none overflow-hidden">
+      
+      {/* Barra de Navegación Superior con Botones de Auth */}
+      <header className="absolute top-0 inset-x-0 p-6 flex justify-between items-center max-w-5xl mx-auto w-full z-20">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-cyan-950 border border-cyan-400 flex items-center justify-center text-xl shadow-[0_0_15px_#00f0ff]">
+            🦉
+          </div>
+          <span className="font-mono font-bold tracking-wider text-cyan-300 text-sm sm:text-base">
+            TIUQUE-TEC <span className="text-amber-400 text-xs">// RUTA RIC</span>
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3 font-mono text-xs">
+          <button
+            onClick={() => onAbrirAuth('login')}
+            className="px-4 py-2 bg-slate-800/80 hover:bg-slate-700 text-cyan-300 border border-cyan-500/40 rounded-xl transition shadow-sm active:scale-95"
+          >
+            INICIAR SESIÓN
+          </button>
+          <button
+            onClick={() => onAbrirAuth('registro')}
+            className="px-4 py-2 bg-gradient-to-r from-cyan-400 to-cyan-500 hover:from-cyan-300 hover:to-cyan-400 text-slate-950 font-bold rounded-xl transition shadow-[0_4px_0_#0e7490] active:translate-y-0.5"
+          >
+            REGISTRARSE ⚡
+          </button>
+        </div>
+      </header>
+
+      {/* Contenido Principal Landing */}
+      <main className="relative z-15 flex flex-col items-center text-center max-w-2xl mx-auto mt-16 gap-6">
+        
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-950/70 border border-cyan-500/40 text-cyan-300 text-xs font-mono shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+          PLATAFORMA GAMIFICADA DE NORMATIVA ELÉCTRICA SEC
+        </div>
+
+        <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-tight">
+          Domina los Pliegos <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-emerald-400 to-amber-400">RIC Chilenos</span> de Forma Épica
+        </h1>
+
+        <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-sans max-w-lg">
+          Entrena tus habilidades técnicas con simulaciones interactivas, rutas de aprendizaje estilo Duolingo y asistencia inteligente guiada por <strong className="text-cyan-300">Tiuque-Tec</strong>.
+        </p>
+
+        <div className="flex flex-col sm:flex-row gap-4 w-full justify-center mt-4">
+          <button
+            onClick={onIngresar}
+            className="px-8 py-4 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold rounded-2xl shadow-[0_6px_0_#b45309,0_10px_25px_rgba(245,158,11,0.4)] active:translate-y-1 transition text-sm tracking-wider uppercase flex items-center justify-center gap-2"
+          >
+            <span>⚡ EXPLORAR RUTA INTERACTIVA</span>
+          </button>
+        </div>
+
+      </main>
+
+      {/* Footer de Landing */}
+      <footer className="absolute bottom-4 text-center text-[10px] text-slate-500 font-mono z-10">
+        [ELECTROLEARN // SISTEMA OFICIAL DE CAPACITACIÓN TÉCNICA]
+      </footer>
+    </div>
+  );
+}
+
+// =========================================================================
+// MODAL DE AUTENTICACIÓN (LOGIN / REGISTRO)
+// =========================================================================
+function ModalAuth({ tipo, onClose, onLoginExitoso }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Aquí puedes conectar tu API de login/registro si la tienes
+    onLoginExitoso();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-[#040914]/90 backdrop-blur-xl flex items-center justify-center p-4 select-none">
+      <div className="w-full max-w-md bg-[#09152b] border border-cyan-500/40 rounded-3xl p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative">
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-5 text-slate-400 hover:text-white font-mono text-xs bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-xl transition"
+        >
+          ✕
+        </button>
+
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-xl">⚡</span>
+          <h3 className="text-xl font-bold text-white uppercase tracking-wide">
+            {tipo === 'login' ? 'Iniciar Sesión' : 'Registro Tiuque-Tec'}
+          </h3>
+        </div>
+        <p className="text-xs text-slate-400 font-mono mb-6">
+          {tipo === 'login' ? 'Accede a tu progreso y rachas guardadas.' : 'Crea tu cuenta técnica y comienza a sumar XP.'}
+        </p>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">Correo Electrónico</label>
+            <input 
+              type="email" 
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu.correo@tecnico.cl" 
+              className="bg-[#040914] border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-3 text-sm text-white outline-none font-mono"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5 mb-2">
+            <label className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">Contraseña</label>
+            <input 
+              type="password" 
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••" 
+              className="bg-[#040914] border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-3 text-sm text-white outline-none font-mono"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full py-3.5 bg-gradient-to-r from-cyan-400 to-cyan-500 hover:from-cyan-300 hover:to-cyan-400 text-slate-950 font-bold rounded-xl shadow-[0_6px_0_#0e7490] active:translate-y-1 transition text-xs tracking-wider uppercase font-mono"
+          >
+            {tipo === 'login' ? 'ENTRAR AL SISTEMA ➔' : 'CREAR CUENTA ⚡'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// =========================================================================
+// COMPONENTE PRINCIPAL ORQUESTADOR
 // =========================================================================
 export default function MapaRutaRIC() {
+  const [sesionIniciada, setSesionIniciada] = useState(false);
+  const [modalAuthTipo, setModalAuthTipo] = useState(null); // 'login' | 'registro' | null
+
   const [unidades, setUnidades] = useState([]);
   const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
   const [hoveredItem, setHoveredItem] = useState(null);
@@ -511,11 +645,35 @@ export default function MapaRutaRIC() {
     }
   }, [unidadSeleccionada]);
 
+  // Si no ha iniciado sesión o no ha presionado explorar, mostramos la Landing
+  if (!sesionIniciada) {
+    return (
+      <>
+        <Particles id="tsparticles-landing" init={particlesInit} options={particlesOptions} />
+        <LandingTiuqueTec 
+          onIngresar={() => setSesionIniciada(true)} 
+          onAbrirAuth={(tipo) => setModalAuthTipo(tipo)} 
+        />
+
+        {modalAuthTipo && (
+          <ModalAuth 
+            tipo={modalAuthTipo} 
+            onClose={() => setModalAuthTipo(null)} 
+            onLoginExitoso={() => {
+              setModalAuthTipo(null);
+              setSesionIniciada(true);
+            }} 
+          />
+        )}
+      </>
+    );
+  }
+
   if (cargando) {
     return (
       <div className="w-screen h-screen bg-[#050811] flex flex-col items-center justify-center font-mono text-cyan-400 gap-3">
         <div className="w-10 h-10 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin" />
-        <span className="text-xs tracking-widest animate-pulse">[TIUQUE_SYS] CONECTANDO RED...</span>
+        <span className="text-xs tracking-widest animate-pulse">[TIUQUE_SYS] CARGANDO RUTA RIC...</span>
       </div>
     );
   }
@@ -534,9 +692,13 @@ export default function MapaRutaRIC() {
               ◀ MAPA
             </button>
           ) : (
-            <div className="w-7 h-7 rounded-full bg-cyan-950 border border-cyan-400 flex items-center justify-center text-sm shadow-[0_0_10px_#00f0ff]">
-              ⚡
-            </div>
+            <button
+              onClick={() => setSesionIniciada(false)}
+              title="Volver a la Landing"
+              className="w-7 h-7 rounded-full bg-cyan-950 border border-cyan-400 flex items-center justify-center text-sm shadow-[0_0_10px_#00f0ff] hover:scale-105 transition"
+            >
+              🦉
+            </button>
           )}
           <div className="truncate">
             <span className="text-xs font-bold text-cyan-300 block truncate tracking-wide">
