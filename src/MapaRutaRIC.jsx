@@ -3,7 +3,7 @@ import Particles from '@tsparticles/react';
 import { loadSlim } from '@tsparticles/slim';
 
 // =========================================================================
-// CONFIGURACIÓN DE API (Apunta a tu Backend Django / Railway)
+// CONFIGURACIÓN DE API
 // =========================================================================
 const API_BASE_URL = 'https://backelec-production.up.railway.app/api';
 
@@ -179,7 +179,7 @@ const NodoRuta = memo(({ item, idx, isHovered, onHover, onSelect, esModoLeccion 
 });
 
 // =========================================================================
-// MODAL DE LECCIÓN DUOLINGO (Conectado a /paginas/ y /preguntas/)
+// MODAL DE LECCIÓN DUOLINGO
 // =========================================================================
 function ModalLeccionDuolingo({ unidad, leccion, onClose, onCompletar }) {
   const [paginas, setPaginas] = useState([]);
@@ -195,7 +195,6 @@ function ModalLeccionDuolingo({ unidad, leccion, onClose, onCompletar }) {
   const [aciertos, setAciertos] = useState(0);
 
   useEffect(() => {
-    // Petición directa a tus ViewSets de Django filtrados por leccion_id
     Promise.all([
       fetch(`${API_BASE_URL}/paginas/?leccion_id=${leccion.id}`).then(res => res.json()),
       fetch(`${API_BASE_URL}/preguntas/?leccion_id=${leccion.id}`).then(res => res.json())
@@ -206,7 +205,7 @@ function ModalLeccionDuolingo({ unidad, leccion, onClose, onCompletar }) {
         setCargando(false);
       })
       .catch(err => {
-        console.warn('Error al conectar con la API, usando respaldo local:', err);
+        console.warn('Usando datos de respaldo locales:', err);
         setPaginas([
           { id: 1, numero_pagina: 1, contenidos: [{ id: 1, texto: `Introducción técnica al módulo ${leccion.nombre}. Fundamentos normativos SEC.` }] },
           { id: 2, numero_pagina: 2, contenidos: [{ id: 2, texto: 'Criterios de seguridad, restricciones y montaje reglamentario.' }] }
@@ -433,10 +432,11 @@ function ModalLeccionDuolingo({ unidad, leccion, onClose, onCompletar }) {
 // =========================================================================
 // COMPONENTE DE LANDING / PANTALLA PREVIA Y AUTENTICACIÓN
 // =========================================================================
-function LandingTiuqueTec({ onIngresar, onAbrirAuth }) {
+function LandingTiuqueTec({ onIntentarExplorar, onAbrirAuth }) {
   return (
     <div className="relative w-full min-h-screen bg-[#040914] text-slate-100 font-sans flex flex-col items-center justify-center p-6 select-none overflow-hidden">
       
+      {/* Barra de Navegación Superior con Botones de Auth */}
       <header className="absolute top-0 inset-x-0 p-6 flex justify-between items-center max-w-5xl mx-auto w-full z-20">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-cyan-950 border border-cyan-400 flex items-center justify-center text-xl shadow-[0_0_15px_#00f0ff]">
@@ -463,10 +463,12 @@ function LandingTiuqueTec({ onIngresar, onAbrirAuth }) {
         </div>
       </header>
 
+      {/* Contenido Principal Landing */}
       <main className="relative z-15 flex flex-col items-center text-center max-w-2xl mx-auto mt-16 gap-6">
+        
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-950/70 border border-cyan-500/40 text-cyan-300 text-xs font-mono shadow-[0_0_15px_rgba(0,240,255,0.2)]">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-          PLATAFORMA GAMIFICADA DE NORMATIVA ELÉCTRICA SEC
+          ACCESO RESTRINGIDO // NORMATIVA ELÉCTRICA SEC
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-tight">
@@ -474,19 +476,21 @@ function LandingTiuqueTec({ onIngresar, onAbrirAuth }) {
         </h1>
 
         <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-sans max-w-lg">
-          Entrena tus habilidades técnicas con simulaciones interactivas, rutas de aprendizaje estilo Duolingo y asistencia inteligente guiada por <strong className="text-cyan-300">Tiuque-Tec</strong>.
+          Para acceder a la ruta interactiva y guardar tu progreso, debes iniciar sesión o registrarte con tu cuenta técnica guiada por <strong className="text-cyan-300">Tiuque-Tec</strong>.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 w-full justify-center mt-4">
           <button
-            onClick={onIngresar}
+            onClick={onIntentarExplorar}
             className="px-8 py-4 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold rounded-2xl shadow-[0_6px_0_#b45309,0_10px_25px_rgba(245,158,11,0.4)] active:translate-y-1 transition text-sm tracking-wider uppercase flex items-center justify-center gap-2"
           >
-            <span>⚡ EXPLORAR RUTA INTERACTIVA</span>
+            <span>⚡ ACCEDER A LA RUTA</span>
           </button>
         </div>
+
       </main>
 
+      {/* Footer de Landing */}
       <footer className="absolute bottom-4 text-center text-[10px] text-slate-500 font-mono z-10">
         [ELECTROLEARN // SISTEMA OFICIAL DE CAPACITACIÓN TÉCNICA]
       </footer>
@@ -495,7 +499,7 @@ function LandingTiuqueTec({ onIngresar, onAbrirAuth }) {
 }
 
 // =========================================================================
-// MODAL DE AUTENTICACIÓN
+// MODAL DE AUTENTICACIÓN (LOGIN / REGISTRO) CON RESTRICCIÓN
 // =========================================================================
 function ModalAuth({ tipo, onClose, onLoginExitoso }) {
   const [email, setEmail] = useState('');
@@ -503,6 +507,7 @@ function ModalAuth({ tipo, onClose, onLoginExitoso }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Validación exitosa: concede acceso a la ruta
     onLoginExitoso();
   };
 
@@ -564,11 +569,11 @@ function ModalAuth({ tipo, onClose, onLoginExitoso }) {
 }
 
 // =========================================================================
-// COMPONENTE PRINCIPAL ORQUESTADOR
+// COMPONENTE PRINCIPAL ORQUESTADOR (PROTEGIDO)
 // =========================================================================
 export default function MapaRutaRIC() {
   const [sesionIniciada, setSesionIniciada] = useState(false);
-  const [modalAuthTipo, setModalAuthTipo] = useState(null);
+  const [modalAuthTipo, setModalAuthTipo] = useState(null); // 'login' | 'registro' | null
 
   const [unidades, setUnidades] = useState([]);
   const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
@@ -580,7 +585,6 @@ export default function MapaRutaRIC() {
     await loadSlim(engine);
   }, []);
 
-  // Carga de unidades desde tu Django API endpoint `/unidades/`
   useEffect(() => {
     fetch(`${API_BASE_URL}/unidades/?ordering=orden`)
       .then((res) => res.json())
@@ -589,7 +593,7 @@ export default function MapaRutaRIC() {
         setCargando(false);
       })
       .catch((err) => {
-        console.warn('Usando unidades de respaldo locales:', err);
+        console.warn('Cargando pliegos demostrativos:', err);
         setUnidades([
           { id: 1, orden: 1, nombre: 'Empalmes', descripcion: 'Condiciones de conexión y cajas de derivación.', lecciones: [{ id: 101, orden: 1, nombre: 'Acometidas' }, { id: 102, orden: 2, nombre: 'Protecciones' }] },
           { id: 2, orden: 2, nombre: 'Tableros', descripcion: 'Especificaciones de gabinetes y rotulados.' },
@@ -640,12 +644,13 @@ export default function MapaRutaRIC() {
     }
   }, [unidadSeleccionada]);
 
+  // Si no hay sesión iniciada, bloqueamos el acceso y mostramos la landing con opción obligatoria de auth
   if (!sesionIniciada) {
     return (
       <>
         <Particles id="tsparticles-landing" init={particlesInit} options={particlesOptions} />
         <LandingTiuqueTec 
-          onIngresar={() => setSesionIniciada(true)} 
+          onIntentarExplorar={() => setModalAuthTipo('login')} 
           onAbrirAuth={(tipo) => setModalAuthTipo(tipo)} 
         />
 
@@ -688,10 +693,10 @@ export default function MapaRutaRIC() {
           ) : (
             <button
               onClick={() => setSesionIniciada(false)}
-              title="Volver a la Landing"
+              title="Cerrar Sesión y Volver"
               className="w-7 h-7 rounded-full bg-cyan-950 border border-cyan-400 flex items-center justify-center text-sm shadow-[0_0_10px_#00f0ff] hover:scale-105 transition"
             >
-              🦉
+              🔒
             </button>
           )}
           <div className="truncate">
