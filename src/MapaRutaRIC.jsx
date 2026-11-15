@@ -496,20 +496,67 @@ function LandingTiuqueTec({ onIntentarExplorar, onAbrirAuth }) {
 }
 
 // =========================================================================
-// MODAL DE AUTENTICACIÓN (LOGIN / REGISTRO)
+// MODAL DE AUTENTICACIÓN (LOGIN / REGISTRO COMPLETO Y CONECTADO)
 // =========================================================================
 function ModalAuth({ tipo, onClose, onLoginExitoso }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    first_name: '',
+    last_name: '',
+    categoria: 'Estudiante SEC'
+  });
+  const [cargando, setCargando] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onLoginExitoso();
+    setCargando(true);
+    setErrorMsg(null);
+
+    const endpoint = tipo === 'login' ? '/auth/login/' : '/auth/registro/';
+    const payload = tipo === 'login' 
+      ? { username: formData.username, password: formData.password }
+      : formData;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || JSON.stringify(data) || 'Ocurrió un error en la autenticación.');
+      }
+
+      if (tipo === 'login' && data.token) {
+        localStorage.setItem('token', data.token);
+      } else if (tipo === 'registro') {
+        alert('¡Registro exitoso! Por favor inicia sesión con tus credenciales.');
+        onClose();
+        return;
+      }
+
+      onLoginExitoso(data);
+    } catch (err) {
+      console.error("Error de auth:", err);
+      setErrorMsg(err.message || 'Error al conectar con el servidor backend.');
+    } finally {
+      setCargando(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#040914]/90 backdrop-blur-xl flex items-center justify-center p-4 select-none">
-      <div className="w-full max-w-md bg-[#09152b] border border-cyan-500/40 rounded-3xl p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative">
+    <div className="fixed inset-0 z-50 bg-[#040914]/90 backdrop-blur-xl flex items-center justify-center p-4 select-none overflow-y-auto">
+      <div className="w-full max-w-md bg-[#09152b] border border-cyan-500/40 rounded-3xl p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative my-8">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 text-slate-400 hover:text-white font-mono text-xs bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-xl transition"
@@ -520,43 +567,112 @@ function ModalAuth({ tipo, onClose, onLoginExitoso }) {
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xl">⚡</span>
           <h3 className="text-xl font-bold text-white uppercase tracking-wide">
-            {tipo === 'login' ? 'Iniciar Sesión' : 'Registro Tiuque-Tec'}
+            {tipo === 'login' ? 'Iniciar Sesión' : 'Registro Completo Tiuque-Tec'}
           </h3>
         </div>
         <p className="text-xs text-slate-400 font-mono mb-6">
-          {tipo === 'login' ? 'Accede a tu progreso y rachas guardadas.' : 'Crea tu cuenta técnica y comienza a sumar XP.'}
+          {tipo === 'login' 
+            ? 'Accede a tu progreso y rachas guardadas.' 
+            : 'Completa tus datos para crear tu perfil técnico certificado SEC.'}
         </p>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
+        {errorMsg && (
+          <div className="mb-4 p-3 bg-rose-950/80 border border-rose-500/50 rounded-xl text-xs text-rose-300 font-mono">
+            ⚠️ {errorMsg}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+          {tipo === 'registro' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">Nombre</label>
+                <input 
+                  type="text" 
+                  name="first_name"
+                  required
+                  value={formData.first_name}
+                  onChange={handleChange}
+                  placeholder="Cristián" 
+                  className="bg-[#040914] border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none font-mono"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">Apellido</label>
+                <input 
+                  type="text" 
+                  name="last_name"
+                  required
+                  value={formData.last_name}
+                  onChange={handleChange}
+                  placeholder="Lillo" 
+                  className="bg-[#040914] border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none font-mono"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">Nombre de Usuario</label>
+            <input 
+              type="text" 
+              name="username"
+              required
+              value={formData.username}
+              onChange={handleChange}
+              placeholder="cristian_lillo" 
+              className="bg-[#040914] border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none font-mono"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
             <label className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">Correo Electrónico</label>
             <input 
               type="email" 
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              name="email"
+              required={tipo === 'registro'}
+              value={formData.email}
+              onChange={handleChange}
               placeholder="tu.correo@tecnico.cl" 
-              className="bg-[#040914] border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-3 text-sm text-white outline-none font-mono"
+              className="bg-[#040914] border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none font-mono"
             />
           </div>
 
-          <div className="flex flex-col gap-1.5 mb-2">
+          <div className="flex flex-col gap-1">
             <label className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">Contraseña</label>
             <input 
               type="password" 
+              name="password"
               required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={formData.password}
+              onChange={handleChange}
               placeholder="••••••••" 
-              className="bg-[#040914] border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-3 text-sm text-white outline-none font-mono"
+              className="bg-[#040914] border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none font-mono"
             />
           </div>
 
+          {tipo === 'registro' && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">Categoría / Perfil SEC</label>
+              <select 
+                name="categoria"
+                value={formData.categoria}
+                onChange={handleChange}
+                className="bg-[#040914] border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none font-mono"
+              >
+                <option value="Estudiante SEC">Estudiante / Técnico en Formación</option>
+                <option value="Electricista Autorizado SEC">Electricista Autorizado SEC</option>
+                <option value="Ingeniero Proyectista">Ingeniero / Proyectista</option>
+              </select>
+            </div>
+          )}
+
           <button
             type="submit"
-            className="w-full py-3.5 bg-gradient-to-r from-cyan-400 to-cyan-500 hover:from-cyan-300 hover:to-cyan-400 text-slate-950 font-bold rounded-xl shadow-[0_6px_0_#0e7490] active:translate-y-1 transition text-xs tracking-wider uppercase font-mono"
+            disabled={cargando}
+            className="w-full mt-3 py-3.5 bg-gradient-to-r from-cyan-400 to-cyan-500 hover:from-cyan-300 hover:to-cyan-400 text-slate-950 font-bold rounded-xl shadow-[0_6px_0_#0e7490] active:translate-y-1 transition text-xs tracking-wider uppercase font-mono disabled:opacity-50"
           >
-            {tipo === 'login' ? 'ENTRAR AL SISTEMA ➔' : 'CREAR CUENTA ⚡'}
+            {cargando ? 'PROCESANDO...' : (tipo === 'login' ? 'ENTRAR AL SISTEMA ➔' : 'REGISTRARSE Y CREAR PERFIL ⚡')}
           </button>
         </form>
       </div>
