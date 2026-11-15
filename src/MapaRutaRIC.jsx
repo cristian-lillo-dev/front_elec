@@ -95,15 +95,17 @@ const ConexionesSVG = memo(({ totalElementos, alturaTotal }) => {
   );
 });
 
-// 2. Nodo Gamificado de la Ruta
-const NodoRuta = memo(({ item, idx, isHovered, onHover, onSelect, esModoLeccion }) => {
+// 2. Nodo Gamificado de la Ruta (Soporta Temas, Unidades o Lecciones)
+const NodoRuta = memo(({ item, idx, isHovered, onHover, onSelect, nivel }) => {
   const xPos = getXPercentage(idx);
   const yPos = 45 + idx * PASO_Y;
-  const numCodigo = String(item.orden || idx + 1).padStart(2, '0');
+  const numCodigo = String(item.orden || item.numero_unidad || idx + 1).padStart(2, '0');
 
   const completado = item.completada || idx < 2;
   const activo = item.activo || (idx === 2 && !completado);
   const bloqueado = item.bloqueado ?? (idx > 2 && !completado);
+
+  const prefijoLabel = nivel === 'temas' ? 'T' : nivel === 'unidades' ? 'U' : 'M';
 
   return (
     <div
@@ -120,7 +122,7 @@ const NodoRuta = memo(({ item, idx, isHovered, onHover, onSelect, esModoLeccion 
       {activo && (
         <div className="absolute -top-11 flex flex-col items-center animate-bounce z-20">
           <div className="bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-bold text-[9px] tracking-wider px-2.5 py-0.5 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.8)] border border-yellow-200 uppercase flex items-center gap-1">
-            <span>⚡ JUGAR</span>
+            <span>⚡ EXPLORAR</span>
           </div>
           <div className="w-2 h-2 bg-amber-500 rotate-45 -mt-1 shadow-sm" />
         </div>
@@ -160,7 +162,7 @@ const NodoRuta = memo(({ item, idx, isHovered, onHover, onSelect, esModoLeccion 
             {completado ? '✓' : activo ? '⚡' : bloqueado ? '🔒' : '★'}
           </span>
           <span className={`text-[8px] font-semibold tracking-wider ${activo ? 'text-slate-900' : 'text-white/90'}`}>
-            {esModoLeccion ? `M-${numCodigo}` : `RIC-${numCodigo}`}
+            {prefijoLabel}-{numCodigo}
           </span>
         </div>
       </div>
@@ -303,7 +305,7 @@ function ModalLeccionDuolingo({ unidad, leccion, onClose, onCompletar }) {
             <div className="flex flex-col">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-[10px] font-mono tracking-widest text-cyan-400 bg-cyan-950/80 border border-cyan-500/40 px-3 py-1 rounded-full uppercase">
-                  📖 {unidad.nombre} // {leccion.nombre}
+                  📖 {unidad?.nombre} // {leccion.nombre}
                 </span>
                 <span className="text-xs text-slate-400 font-mono">
                   Página {paginaActual.numero_pagina} de {totalPasosTeoria}
@@ -436,7 +438,6 @@ function LandingTiuqueTec({ onIntentarExplorar, onAbrirAuth }) {
   return (
     <div className="relative w-full min-h-screen bg-[#040914] text-slate-100 font-sans flex flex-col items-center justify-center p-6 select-none overflow-hidden">
       
-      {/* Barra de Navegación Superior con Botones de Auth */}
       <header className="absolute top-0 inset-x-0 p-6 flex justify-between items-center max-w-5xl mx-auto w-full z-20">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-cyan-950 border border-cyan-400 flex items-center justify-center text-xl shadow-[0_0_15px_#00f0ff]">
@@ -463,9 +464,7 @@ function LandingTiuqueTec({ onIntentarExplorar, onAbrirAuth }) {
         </div>
       </header>
 
-      {/* Contenido Principal Landing */}
       <main className="relative z-15 flex flex-col items-center text-center max-w-2xl mx-auto mt-16 gap-6">
-        
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-950/70 border border-cyan-500/40 text-cyan-300 text-xs font-mono shadow-[0_0_15px_rgba(0,240,255,0.2)]">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
           ACCESO RESTRINGIDO // NORMATIVA ELÉCTRICA SEC
@@ -487,10 +486,8 @@ function LandingTiuqueTec({ onIntentarExplorar, onAbrirAuth }) {
             <span>⚡ ACCEDER A LA RUTA</span>
           </button>
         </div>
-
       </main>
 
-      {/* Footer de Landing */}
       <footer className="absolute bottom-4 text-center text-[10px] text-slate-500 font-mono z-10">
         [ELECTROLEARN // SISTEMA OFICIAL DE CAPACITACIÓN TÉCNICA]
       </footer>
@@ -499,7 +496,7 @@ function LandingTiuqueTec({ onIntentarExplorar, onAbrirAuth }) {
 }
 
 // =========================================================================
-// MODAL DE AUTENTICACIÓN (LOGIN / REGISTRO) CON RESTRICCIÓN
+// MODAL DE AUTENTICACIÓN (LOGIN / REGISTRO)
 // =========================================================================
 function ModalAuth({ tipo, onClose, onLoginExitoso }) {
   const [email, setEmail] = useState('');
@@ -507,7 +504,6 @@ function ModalAuth({ tipo, onClose, onLoginExitoso }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Validación exitosa: concede acceso a la ruta
     onLoginExitoso();
   };
 
@@ -569,14 +565,19 @@ function ModalAuth({ tipo, onClose, onLoginExitoso }) {
 }
 
 // =========================================================================
-// COMPONENTE PRINCIPAL ORQUESTADOR (PROTEGIDO)
+// COMPONENTE PRINCIPAL ORQUESTADOR (CON JERARQUÍA TEMAS -> UNIDADES -> LECCIONES)
 // =========================================================================
-export default function MapaRutaRIC() {
+export default function App() {
   const [sesionIniciada, setSesionIniciada] = useState(false);
-  const [modalAuthTipo, setModalAuthTipo] = useState(null); // 'login' | 'registro' | null
+  const [modalAuthTipo, setModalAuthTipo] = useState(null);
 
+  // Estados de Jerarquía
+  const [temas, setTemas] = useState([]);
+  const [temaSeleccionado, setTemaSeleccionado] = useState(null);
   const [unidades, setUnidades] = useState([]);
   const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
+  const [lecciones, setLecciones] = useState([]);
+  
   const [hoveredItem, setHoveredItem] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [leccionActiva, setLeccionActiva] = useState(null);
@@ -585,25 +586,70 @@ export default function MapaRutaRIC() {
     await loadSlim(engine);
   }, []);
 
+  // 1. Cargar Temas al iniciar sesión
   useEffect(() => {
-    fetch(`${API_BASE_URL}/unidades/?ordering=orden`)
-      .then((res) => res.json())
-      .then((data) => {
-        setUnidades(data);
-        setCargando(false);
-      })
-      .catch((err) => {
-        console.warn('Cargando pliegos demostrativos:', err);
-        setUnidades([
-          { id: 1, orden: 1, nombre: 'Empalmes', descripcion: 'Condiciones de conexión y cajas de derivación.', lecciones: [{ id: 101, orden: 1, nombre: 'Acometidas' }, { id: 102, orden: 2, nombre: 'Protecciones' }] },
-          { id: 2, orden: 2, nombre: 'Tableros', descripcion: 'Especificaciones de gabinetes y rotulados.' },
-          { id: 3, orden: 3, nombre: 'Alimentadores', descripcion: 'Cálculo de caídas de tensión y canalizaciones.' },
-          { id: 4, orden: 4, nombre: 'Conductores', descripcion: 'Aislaciones EVA y libres de halógenos.' },
-          { id: 5, orden: 5, nombre: 'Protecciones', descripcion: 'Disyuntores y coordinación diferencial.' },
-        ]);
-        setCargando(false);
-      });
-  }, []);
+    if (sesionIniciada) {
+      setCargando(true);
+      fetch(`${API_BASE_URL}/temas/?ordering=orden`)
+        .then((res) => res.json())
+        .then((data) => {
+          setTemas(data);
+          setCargando(false);
+        })
+        .catch((err) => {
+          console.warn('Cargando temas demostrativos:', err);
+          setTemas([
+            { id: 1, orden: 1, nombre: 'Instalaciones de Baja Tensión', descripcion: 'Principios generales y acometidas.' },
+            { id: 2, orden: 2, nombre: 'Sistemas de Protección y Puestas a Tierra', descripcion: 'Protecciones diferenciales y mallas.' }
+          ]);
+          setCargando(false);
+        });
+    }
+  }, [sesionIniciada]);
+
+  // 2. Cargar Unidades cuando se selecciona un Tema
+  useEffect(() => {
+    if (temaSeleccionado) {
+      setCargando(true);
+      fetch(`${API_BASE_URL}/unidades/?tema=${temaSeleccionado.id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setUnidades(data);
+          setCargando(false);
+        })
+        .catch((err) => {
+          console.warn('Cargando unidades demostrativas:', err);
+          setUnidades([
+            { id: 101, numero_unidad: 1, nombre: 'Empalmes y Acometidas', descripcion: 'Condiciones de conexión reglamentaria.' }
+          ]);
+          setCargando(false);
+        });
+    }
+  }, [temaSeleccionado]);
+
+  // 3. Cargar Lecciones cuando se selecciona una Unidad
+  useEffect(() => {
+    if (unidadSeleccionada) {
+      if (unidadSeleccionada.lecciones && unidadSeleccionada.lecciones.length > 0) {
+        setLecciones(unidadSeleccionada.lecciones);
+      } else {
+        setCargando(true);
+        fetch(`${API_BASE_URL}/lecciones/?unidad=${unidadSeleccionada.id}`)
+          .then((res) => res.json())
+          .then((data) => {
+            setLecciones(data);
+            setCargando(false);
+          })
+          .catch((err) => {
+            console.warn('Cargando lecciones demostrativas:', err);
+            setLecciones([
+              { id: 1001, orden: 1, nombre: 'Introducción a Acometidas', descripcion: 'Estudio de empalmes domiciliarios.' }
+            ]);
+            setCargando(false);
+          });
+      }
+    }
+  }, [unidadSeleccionada]);
 
   const particlesOptions = useMemo(() => ({
     fullScreen: { enable: true, zIndex: 0 },
@@ -625,26 +671,38 @@ export default function MapaRutaRIC() {
     detectRetina: true,
   }), []);
 
-  const listaNodos = useMemo(() => {
-    if (unidadSeleccionada) {
-      return unidadSeleccionada.lecciones || [];
-    }
-    return unidades;
-  }, [unidadSeleccionada, unidades]);
+  // Determinar qué nivel mostrar en pantalla
+  const nivelActual = !temaSeleccionado ? 'temas' : !unidadSeleccionada ? 'unidades' : 'lecciones';
 
-  const esModoLeccion = Boolean(unidadSeleccionada);
+  const listaNodos = useMemo(() => {
+    if (nivelActual === 'temas') return temas;
+    if (nivelActual === 'unidades') return unidades;
+    return lecciones;
+  }, [nivelActual, temas, unidades, lecciones]);
+
   const alturaTotal = Math.max(580, listaNodos.length * PASO_Y + 110);
 
   const handleSelectNodo = useCallback((item) => {
-    if (!unidadSeleccionada) {
+    if (!temaSeleccionado) {
+      setTemaSeleccionado(item);
+      setUnidadSeleccionada(null);
+      setHoveredItem(null);
+    } else if (!unidadSeleccionada) {
       setUnidadSeleccionada(item);
       setHoveredItem(null);
     } else {
       setLeccionActiva(item);
     }
-  }, [unidadSeleccionada]);
+  }, [temaSeleccionado, unidadSeleccionada]);
 
-  // Si no hay sesión iniciada, bloqueamos el acceso y mostramos la landing con opción obligatoria de auth
+  const handleVolver = () => {
+    if (unidadSeleccionada) {
+      setUnidadSeleccionada(null);
+    } else if (temaSeleccionado) {
+      setTemaSeleccionado(null);
+    }
+  };
+
   if (!sesionIniciada) {
     return (
       <>
@@ -672,7 +730,7 @@ export default function MapaRutaRIC() {
     return (
       <div className="w-screen h-screen bg-[#050811] flex flex-col items-center justify-center font-mono text-cyan-400 gap-3">
         <div className="w-10 h-10 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin" />
-        <span className="text-xs tracking-widest animate-pulse">[TIUQUE_SYS] CARGANDO RUTA RIC...</span>
+        <span className="text-xs tracking-widest animate-pulse">[TIUQUE_SYS] SINCRONIZANDO NORMATIVA RIC...</span>
       </div>
     );
   }
@@ -683,12 +741,12 @@ export default function MapaRutaRIC() {
 
       <header className="sticky top-3 z-30 mx-auto w-[94%] max-w-2xl bg-[#09152b]/90 border border-cyan-500/30 rounded-2xl px-4 py-2.5 flex items-center justify-between shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl">
         <div className="flex items-center gap-3">
-          {esModoLeccion ? (
+          {nivelActual !== 'temas' ? (
             <button
-              onClick={() => setUnidadSeleccionada(null)}
+              onClick={handleVolver}
               className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-3 py-1 rounded-xl text-xs font-bold transition active:scale-95 flex items-center gap-1 shadow-[0_3px_0_#0e7490]"
             >
-              ◀ MAPA
+              ◀ VOLVER
             </button>
           ) : (
             <button
@@ -701,10 +759,10 @@ export default function MapaRutaRIC() {
           )}
           <div className="truncate">
             <span className="text-xs font-bold text-cyan-300 block truncate tracking-wide">
-              {esModoLeccion ? unidadSeleccionada.nombre : 'ELECTROLEARN // RUTA RIC'}
+              {nivelActual === 'temas' ? 'ELECTROLEARN // TEMAS RIC' : nivelActual === 'unidades' ? temaSeleccionado?.nombre : unidadSeleccionada?.nombre}
             </span>
             <span className="text-[10px] text-slate-400 font-mono">
-              {esModoLeccion ? `${listaNodos.length} módulos prácticos` : 'NORMATIVA TÉCNICA SEC'}
+              {nivelActual === 'temas' ? `${temas.length} Temas Principales` : nivelActual === 'unidades' ? `${unidades.length} Unidades de Estudio` : `${lecciones.length} Módulos Interactivos`}
             </span>
           </div>
         </div>
@@ -724,7 +782,7 @@ export default function MapaRutaRIC() {
           <aside className="fixed right-6 top-24 z-40 w-72 bg-[#091830]/95 border-2 border-amber-400 rounded-3xl p-4 shadow-[0_10px_35px_rgba(245,158,11,0.3)] backdrop-blur-md pointer-events-none transition-all">
             <div className="flex items-center justify-between border-b border-amber-400/30 pb-1.5 mb-2">
               <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest flex items-center gap-1">
-                <span>📑</span> {esModoLeccion ? 'MÓDULO TÉCNICO' : 'PLIEGO OFICIAL'}
+                <span>📑</span> {nivelActual === 'temas' ? 'TEMA OFICIAL' : nivelActual === 'unidades' ? 'UNIDAD DE ESTUDIO' : 'MÓDULO TÉCNICO'}
               </span>
               <span className="text-[9px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full font-mono font-medium">
                 SEC
@@ -747,10 +805,10 @@ export default function MapaRutaRIC() {
               key={nodo.id || idx}
               item={nodo}
               idx={idx}
+              nivel={nivelActual}
               isHovered={hoveredItem?.id === nodo.id}
               onHover={setHoveredItem}
               onSelect={handleSelectNodo}
-              esModoLeccion={esModoLeccion}
             />
           ))}
         </div>
@@ -765,9 +823,11 @@ export default function MapaRutaRIC() {
             <span className="font-bold text-white">TIUQUE_AI:</span>{' '}
             {hoveredItem
               ? `Inspeccionando ${hoveredItem.nombre}. ¡Avanza con seguridad!`
-              : esModoLeccion
-              ? `Lecciones de ${unidadSeleccionada.nombre}`
-              : 'Elige un pliego para desplegar su ruta.'}
+              : nivelActual === 'temas'
+              ? 'Selecciona un Tema reglamentario para desplegar sus unidades.'
+              : nivelActual === 'unidades'
+              ? `Explorando unidades de ${temaSeleccionado?.nombre}`
+              : `Lecciones prácticas de ${unidadSeleccionada?.nombre}`}
           </p>
         </div>
         <span className="text-[10px] text-emerald-400 font-mono font-medium flex items-center gap-1">
