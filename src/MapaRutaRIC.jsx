@@ -2,19 +2,12 @@ import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import Particles from '@tsparticles/react';
 import { loadSlim } from '@tsparticles/slim';
 
-// =========================================================================
-// CONFIGURACIÓN DE API
-// =========================================================================
-const API_BASE_URL = 'https://backelec-production.up.railway.app/api';
+const API_BASE_URL = 'https://backelec1-production.up.railway.app/api';
 
-// =========================================================================
-// CONSTANTES DE DISTRIBUCIÓN Y ESPACIADO
-// =========================================================================
 const PASO_Y = 120;
 const PATRON_X = [30, 50, 70, 50];
 const getXPercentage = (index) => PATRON_X[index % PATRON_X.length];
 
-// 1. Conexiones Curvas Orgánicas con Pulso Eléctrico Animado
 const ConexionesSVG = memo(({ totalElementos, alturaTotal }) => {
   const puntos = useMemo(() => {
     return Array.from({ length: totalElementos }).map((_, i) => ({
@@ -95,7 +88,6 @@ const ConexionesSVG = memo(({ totalElementos, alturaTotal }) => {
   );
 });
 
-// 2. Nodo Gamificado de la Ruta (Soporta Temas, Unidades o Lecciones)
 const NodoRuta = memo(({ item, idx, isHovered, onHover, onSelect, nivel }) => {
   const xPos = getXPercentage(idx);
   const yPos = 45 + idx * PASO_Y;
@@ -180,9 +172,6 @@ const NodoRuta = memo(({ item, idx, isHovered, onHover, onSelect, nivel }) => {
   );
 });
 
-// =========================================================================
-// MODAL DE LECCIÓN DUOLINGO
-// =========================================================================
 function ModalLeccionDuolingo({ unidad, leccion, onClose, onCompletar }) {
   const [paginas, setPaginas] = useState([]);
   const [preguntas, setPreguntas] = useState([]);
@@ -431,9 +420,6 @@ function ModalLeccionDuolingo({ unidad, leccion, onClose, onCompletar }) {
   );
 }
 
-// =========================================================================
-// COMPONENTE DE LANDING / PANTALLA PREVIA Y AUTENTICACIÓN
-// =========================================================================
 function LandingTiuqueTec({ onIntentarExplorar, onAbrirAuth }) {
   return (
     <div className="relative w-full min-h-screen bg-[#040914] text-slate-100 font-sans flex flex-col items-center justify-center p-6 select-none overflow-hidden">
@@ -495,9 +481,6 @@ function LandingTiuqueTec({ onIntentarExplorar, onAbrirAuth }) {
   );
 }
 
-// =========================================================================
-// MODAL DE AUTENTICACIÓN (LOGIN / REGISTRO COMPLETO Y CONECTADO)
-// =========================================================================
 function ModalAuth({ tipo, onClose, onLoginExitoso }) {
   const [formData, setFormData] = useState({
     username: '',
@@ -567,12 +550,12 @@ function ModalAuth({ tipo, onClose, onLoginExitoso }) {
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xl">⚡</span>
           <h3 className="text-xl font-bold text-white uppercase tracking-wide">
-            {tipo === 'login' ? 'Iniciar Sesión' : 'Registro Completo Tiuque-Tec'}
+            {tipo === 'login' ? 'Iniciar Sesión' : 'Registro Tiuque-Tec'}
           </h3>
         </div>
         <p className="text-xs text-slate-400 font-mono mb-6">
           {tipo === 'login' 
-            ? 'Accede a tu progreso y rachas guardadas.' 
+            ? 'Ingresa tu usuario y contraseña para continuar.' 
             : 'Completa tus datos para crear tu perfil técnico certificado SEC.'}
         </p>
 
@@ -583,35 +566,6 @@ function ModalAuth({ tipo, onClose, onLoginExitoso }) {
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-          {tipo === 'registro' && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">Nombre</label>
-                <input 
-                  type="text" 
-                  name="first_name"
-                  required
-                  value={formData.first_name}
-                  onChange={handleChange}
-                  placeholder="Cristián" 
-                  className="bg-[#040914] border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none font-mono"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">Apellido</label>
-                <input 
-                  type="text" 
-                  name="last_name"
-                  required
-                  value={formData.last_name}
-                  onChange={handleChange}
-                  placeholder="Lillo" 
-                  className="bg-[#040914] border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none font-mono"
-                />
-              </div>
-            </div>
-          )}
-
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">Nombre de Usuario</label>
             <input 
@@ -620,23 +574,54 @@ function ModalAuth({ tipo, onClose, onLoginExitoso }) {
               required
               value={formData.username}
               onChange={handleChange}
-              placeholder="cristian_lillo" 
+              placeholder="cristian_dev" 
               className="bg-[#040914] border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none font-mono"
             />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">Correo Electrónico</label>
-            <input 
-              type="email" 
-              name="email"
-              required={tipo === 'registro'}
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="tu.correo@tecnico.cl" 
-              className="bg-[#040914] border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none font-mono"
-            />
-          </div>
+          {tipo === 'registro' && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">Nombre</label>
+                  <input 
+                    type="text" 
+                    name="first_name"
+                    required
+                    value={formData.first_name}
+                    onChange={handleChange}
+                    placeholder="Cristián" 
+                    className="bg-[#040914] border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none font-mono"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">Apellido</label>
+                  <input 
+                    type="text" 
+                    name="last_name"
+                    required
+                    value={formData.last_name}
+                    onChange={handleChange}
+                    placeholder="Lillo" 
+                    className="bg-[#040914] border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">Correo Electrónico</label>
+                <input 
+                  type="email" 
+                  name="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="tu.correo@tecnico.cl" 
+                  className="bg-[#040914] border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none font-mono"
+                />
+              </div>
+            </>
+          )}
 
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">Contraseña</label>
@@ -680,14 +665,10 @@ function ModalAuth({ tipo, onClose, onLoginExitoso }) {
   );
 }
 
-// =========================================================================
-// COMPONENTE PRINCIPAL ORQUESTADOR (CON JERARQUÍA TEMAS -> UNIDADES -> LECCIONES)
-// =========================================================================
-export default function App() {
+export default function MapaRutaRIC() {
   const [sesionIniciada, setSesionIniciada] = useState(false);
   const [modalAuthTipo, setModalAuthTipo] = useState(null);
 
-  // Estados de Jerarquía
   const [temas, setTemas] = useState([]);
   const [temaSeleccionado, setTemaSeleccionado] = useState(null);
   const [unidades, setUnidades] = useState([]);
@@ -702,7 +683,6 @@ export default function App() {
     await loadSlim(engine);
   }, []);
 
-  // 1. Cargar Temas al iniciar sesión
   useEffect(() => {
     if (sesionIniciada) {
       setCargando(true);
@@ -723,7 +703,6 @@ export default function App() {
     }
   }, [sesionIniciada]);
 
-  // 2. Cargar Unidades cuando se selecciona un Tema
   useEffect(() => {
     if (temaSeleccionado) {
       setCargando(true);
@@ -743,7 +722,6 @@ export default function App() {
     }
   }, [temaSeleccionado]);
 
-  // 3. Cargar Lecciones cuando se selecciona una Unidad
   useEffect(() => {
     if (unidadSeleccionada) {
       if (unidadSeleccionada.lecciones && unidadSeleccionada.lecciones.length > 0) {
@@ -787,7 +765,6 @@ export default function App() {
     detectRetina: true,
   }), []);
 
-  // Determinar qué nivel mostrar en pantalla
   const nivelActual = !temaSeleccionado ? 'temas' : !unidadSeleccionada ? 'unidades' : 'lecciones';
 
   const listaNodos = useMemo(() => {
