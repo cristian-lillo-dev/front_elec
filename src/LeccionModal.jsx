@@ -154,11 +154,12 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
 
   if (cargando) {
     return (
-      <div className="fixed inset-0 z-50 bg-[#050914]/95 backdrop-blur-md flex flex-col items-center justify-center font-mono text-[#ffb800] gap-3">
+      <div className="fixed inset-0 z-50 bg-[#050914] flex flex-col items-center justify-center font-mono text-[#ffb800] gap-3">
         <div 
-          className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none z-0 opacity-35 filter brightness-50 contrast-125"
+          className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none z-0 opacity-85 contrast-110"
           style={{ backgroundImage: `url(${wallMapa})` }}
         />
+        <div className="fixed inset-0 bg-[#050914]/40 pointer-events-none z-0" />
         <div className="w-9 h-9 border-2 border-[#ffb800] border-t-transparent rounded-full animate-spin relative z-10" />
         <span className="text-xs tracking-widest animate-pulse relative z-10">[SPAWNING_NODE // DESCARGANDO PAQUETES SEC...]</span>
       </div>
@@ -178,19 +179,19 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
       : 100;
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#050914]/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 sm:p-6 overflow-y-auto select-none font-mono">
+    <div className="fixed inset-0 z-50 bg-[#050914] flex flex-col items-center justify-center p-4 sm:p-6 overflow-y-auto select-none font-mono">
       
-      {/* Fondo con wall_mapa.jpeg */}
+      {/* Fondo con wall_mapa.jpeg mucho más visible */}
       <div 
-        className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none z-0 opacity-35 filter brightness-50 contrast-125"
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none z-0 opacity-85 contrast-110"
         style={{ backgroundImage: `url(${wallMapa})` }}
       />
-      <div className="fixed inset-0 bg-gradient-to-b from-[#050914]/90 via-[#050914]/85 to-[#050914]/95 pointer-events-none z-0" />
+      <div className="fixed inset-0 bg-gradient-to-b from-[#050914]/50 via-[#050914]/35 to-[#050914]/65 pointer-events-none z-0" />
 
       <div className="w-full max-w-2xl my-auto flex flex-col gap-4 relative z-10">
         
         {/* HUD Superior del Modal */}
-        <div className="w-full bg-[#0a1120] border border-[#ffb800]/40 rounded-xl p-3 flex items-center justify-between gap-4 shadow-[0_0_25px_rgba(0,0,0,0.8)]">
+        <div className="w-full bg-[#0a1120]/90 backdrop-blur-md border border-[#ffb800]/40 rounded-xl p-3 flex items-center justify-between gap-4 shadow-[0_0_25px_rgba(0,0,0,0.8)]">
           <button
             onClick={onClose}
             className="text-slate-300 hover:text-[#ffb800] bg-[#050914] border border-slate-700 hover:border-[#ffb800] px-3 py-1.5 rounded-lg transition text-xs cursor-pointer font-bold"
@@ -228,7 +229,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
         </div>
 
         {/* Ventana Principal Estilo Terminal HTB */}
-        <div className="w-full bg-[#0a1120] border-2 border-[#ffb800]/60 rounded-2xl p-6 sm:p-8 shadow-[0_0_45px_rgba(255,184,0,0.15)] flex flex-col relative max-h-[78vh] overflow-y-auto">
+        <div className="w-full bg-[#0a1120]/90 backdrop-blur-md border-2 border-[#ffb800]/60 rounded-2xl p-6 sm:p-8 shadow-[0_0_45px_rgba(255,184,0,0.15)] flex flex-col relative max-h-[78vh] overflow-y-auto">
           
           {/* FASE 1: PÁGINAS DE TEORÍA */}
           {fase === 'teoria' && paginaActual && (
