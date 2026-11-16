@@ -177,7 +177,7 @@ export default function Auth({ onLoginExitoso }) {
                   <div className="w-12 h-12 rounded-lg bg-[#ffb800]/10 border border-[#ffb800]/30 flex items-center justify-center mb-5 p-2.5 shadow-[0_0_15px_rgba(255,184,0,0.15)]">
                     <img src={iconoConcentrado} alt="Duolingo" className="w-full h-full object-contain" />
                   </div>
-                  <h4 className="text-lg font-bold mb-2 text-white font-sans">Gamificación Estilo Duolingo</h4>
+                  <h4 className="text-lg font-bold mb-2 text-white font-sans">Gamificación </h4>
                   <p className="text-slate-400 text-xs leading-relaxed font-sans">Lecciones rápidas, rachas diarias y duelos. Domina desde lo básico a lo complejo paso a paso.</p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-slate-800 text-[10px] text-[#ffb800]">STATUS: ACTIVE_ENGINE</div>
