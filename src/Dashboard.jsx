@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import logoImg from './assets/logo_s.png';
+import DetalleUnidad from './DetalleUnidad';
 
 const API_BASE_URL = 'https://backelec1-production.up.railway.app/api';
 
-export default function Dashboard({ user, onSelectUnidad, onLogout }) {
+export default function Dashboard({ user, onLogout }) {
   const [temas, setTemas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [hoveredTema, setHoveredTema] = useState(null);
@@ -11,6 +12,10 @@ export default function Dashboard({ user, onSelectUnidad, onLogout }) {
   const [unidadesMap, setUnidadesMap] = useState({});
   const [cargandoUnidadesId, setCargandoUnidadesId] = useState(null);
   const [calculadoraActiva, setCalculadoraActiva] = useState(null);
+  
+  // Estado para manejar la unidad seleccionada y renderizar el mapa de lecciones
+  const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
+  const [leccionActiva, setLeccionActiva] = useState(null);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/temas/?ordering=orden`)
@@ -60,39 +65,52 @@ export default function Dashboard({ user, onSelectUnidad, onLogout }) {
 
   const nombreUsuario = user?.username || user?.name || "Operador";
 
-  return (
-    <div className="min-h-screen bg-[#030712] text-slate-100 font-sans flex flex-col justify-between selection:bg-cyan-500 selection:text-slate-950 relative overflow-x-hidden">
-      
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f29370a_1px,transparent_1px),linear-gradient(to_bottom,#1f29370a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+  // Si el usuario seleccionó una unidad, mostramos el componente independiente de DetalleUnidad (Mapa estilo Duolingo con temática Hacker)
+  if (unidadSeleccionada) {
+    return (
+      <DetalleUnidad 
+        unidad={unidadSeleccionada} 
+        onVolver={() => setUnidadSeleccionada(null)} 
+        onSelectLeccion={(leccion) => setLeccionActiva(leccion)} 
+      />
+    );
+  }
 
-      <header className="sticky top-0 z-50 bg-[#030712]/90 backdrop-blur-xl border-b border-cyan-500/20 px-6 py-3.5">
+  return (
+    <div className="min-h-screen bg-[#050914] text-slate-100 font-mono flex flex-col justify-between selection:bg-[#9fef00] selection:text-slate-950 relative overflow-x-hidden">
+      
+      {/* Grid Técnico de Fondo Verde Hacker / Oscuro */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#9fef0008_1px,transparent_1px),linear-gradient(to_bottom,#9fef0008_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+
+      {/* Header Estilo Terminal HUD */}
+      <header className="sticky top-0 z-50 bg-[#080d1a]/95 backdrop-blur-xl border-b border-[#9fef00]/30 px-6 py-3.5 shadow-[0_0_20px_rgba(159,239,0,0.1)]">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-3 cursor-pointer group">
-            <img src={logoImg} alt="AreaElectrica Logo" className="w-9 h-9 object-contain rounded-xl group-hover:scale-105 transition" />
+            <img src={logoImg} alt="AreaElectrica Logo" className="w-9 h-9 object-contain rounded-xl group-hover:scale-105 transition border border-[#9fef00]/40" />
             <div className="flex flex-col">
-              <span className="text-sm font-black tracking-wider text-white font-mono uppercase">
-                AREA<span className="text-cyan-400">ELECTRICA</span> <span className="text-amber-400 text-[10px]">[HUD]</span>
+              <span className="text-sm font-black tracking-wider text-white uppercase">
+                AREA<span className="text-[#9fef00]">ELECTRICA</span> <span className="text-[#ffb800] text-[10px]">[ROOT_HUD]</span>
               </span>
-              <span className="text-[9px] text-slate-500 font-mono tracking-widest">SEC_RIC_SYS v4.2</span>
+              <span className="text-[9px] text-slate-400 tracking-widest">SEC_RIC_SYS v4.2 // SECURE</span>
             </div>
           </div>
 
           <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-1.5 bg-[#0b1329] border border-cyan-500/30 px-3 py-1 rounded-lg text-xs font-mono text-cyan-300 shadow-inner">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+            <div className="flex items-center space-x-1.5 bg-[#0d1527] border border-[#9fef00]/40 px-3 py-1 rounded-lg text-xs text-[#9fef00] shadow-inner">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#9fef00] animate-ping" />
               <span>STREAK: 5D</span>
             </div>
-            <div className="flex items-center space-x-1.5 bg-[#0b1329] border border-amber-500/30 px-3 py-1 rounded-lg text-xs font-mono text-amber-400 shadow-inner">
+            <div className="flex items-center space-x-1.5 bg-[#0d1527] border border-amber-500/40 px-3 py-1 rounded-lg text-xs text-amber-400 shadow-inner">
               <span>🪙</span>
               <span>150 NC</span>
             </div>
-            <div className="flex items-center space-x-1.5 bg-[#0b1329] border border-rose-500/30 px-3 py-1 rounded-lg text-xs font-mono text-rose-400 shadow-inner">
+            <div className="flex items-center space-x-1.5 bg-[#0d1527] border border-rose-500/40 px-3 py-1 rounded-lg text-xs text-rose-400 shadow-inner">
               <span>❤️</span>
               <span>5 HP</span>
             </div>
             <button 
               onClick={onLogout}
-              className="w-8 h-8 rounded-xl bg-[#0b1329] hover:bg-rose-950/40 border border-slate-700 hover:border-rose-500/50 flex items-center justify-center text-slate-400 hover:text-rose-400 text-xs transition-all cursor-pointer ml-2"
+              className="w-8 h-8 rounded-xl bg-[#0d1527] hover:bg-rose-950/60 border border-slate-700 hover:border-rose-500/60 flex items-center justify-center text-slate-400 hover:text-rose-400 text-xs transition-all cursor-pointer ml-2"
               title="Cerrar Sesión"
             >
               ⌁
@@ -103,39 +121,41 @@ export default function Dashboard({ user, onSelectUnidad, onLogout }) {
 
       <main className="max-w-6xl mx-auto px-4 py-8 w-full space-y-8 flex-1 relative z-10">
         
-        <div className="bg-gradient-to-r from-[#091326] to-[#040914] border border-cyan-500/30 rounded-2xl p-6 md:p-8 shadow-[0_0_30px_rgba(0,0,0,0.5)] flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+        {/* Banner de Bienvenida Root */}
+        <div className="bg-gradient-to-r from-[#0a1424] to-[#050a14] border border-[#9fef00]/40 rounded-2xl p-6 md:p-8 shadow-[0_0_30px_rgba(159,239,0,0.1)] flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#9fef00]/5 rounded-full blur-3xl pointer-events-none" />
           
           <div className="space-y-2 z-10">
-            <div className="flex items-center gap-2 font-mono">
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 uppercase tracking-widest">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-[#112614] text-[#9fef00] border border-[#9fef00]/50 uppercase tracking-widest">
                 ACCESS_GRANTED // {user?.categoria || "ESTUDIANTE_SEC"}
               </span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-black text-white font-mono">
-              USER_ROOT: <span className="text-[#FFB800]">{nombreUsuario}</span>
+            <h1 className="text-2xl md:text-3xl font-black text-white">
+              USER_ROOT: <span className="text-[#ffb800]">{nombreUsuario}</span>
             </h1>
-            <p className="text-slate-400 text-xs md:text-sm font-sans max-w-lg">
-              Selecciona un vector de estudio normativo para desplegar sus unidades o utiliza las herramientas del taller.
+            <p className="text-slate-300 text-xs md:text-sm font-sans max-w-lg">
+              Selecciona un vector de estudio normativo y haz clic en una unidad para desplegar su mapa de lecciones interactivo o utiliza las herramientas de taller.
             </p>
           </div>
 
-          <div className="bg-[#030712] border border-amber-500/30 px-6 py-4 rounded-xl text-center z-10 shadow-inner">
-            <p className="text-[10px] text-slate-400 font-mono uppercase tracking-widest">EXPERIENCIA TOTAL</p>
-            <p className="text-xl md:text-2xl font-black text-amber-400 font-mono">2,450 XP</p>
+          <div className="bg-[#050914] border border-[#ffb800]/40 px-6 py-4 rounded-xl text-center z-10 shadow-inner">
+            <p className="text-[10px] text-slate-400 uppercase tracking-widest">EXPERIENCIA TOTAL</p>
+            <p className="text-xl md:text-2xl font-black text-[#ffb800]">2,450 XP</p>
           </div>
         </div>
 
+        {/* Sección de Vectores de Estudio */}
         <div className="space-y-4">
           <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <h2 className="text-sm font-mono font-bold text-slate-200 tracking-wider flex items-center gap-2 uppercase">
-              <span className="text-cyan-400">#</span> Vectores de Estudio (Normativa SEC RIC)
+            <h2 className="text-sm font-bold text-slate-200 tracking-wider flex items-center gap-2 uppercase">
+              <span className="text-[#9fef00]">#</span> Vectores de Estudio (Normativa SEC RIC)
             </h2>
-            <span className="text-[10px] font-mono text-slate-500">[HAZ CLIC PARA DESPLEGAR UNIDADES]</span>
+            <span className="text-[10px] text-slate-400">[HAZ CLIC EN UNA UNIDAD PARA ABRIR EL MAPA]</span>
           </div>
 
           {cargando ? (
-            <div className="text-center py-16 text-cyan-400 font-mono text-xs animate-pulse">
+            <div className="text-center py-16 text-[#9fef00] text-xs animate-pulse">
               [ANALIZANDO NODOS REMOTOS DESDE RAILWAY...]
             </div>
           ) : (
@@ -150,31 +170,31 @@ export default function Dashboard({ user, onSelectUnidad, onLogout }) {
                       onMouseEnter={() => setHoveredTema(tema)}
                       onMouseLeave={() => setHoveredTema(null)}
                       onClick={() => handleToggleTema(tema)}
-                      className={`bg-[#071022] border rounded-2xl p-6 shadow-xl transition-all cursor-pointer relative group flex flex-col justify-between overflow-hidden ${
-                        estaExpandido ? 'border-amber-400 shadow-[0_0_20px_rgba(255,184,0,0.2)]' : 'border-cyan-500/20 hover:border-cyan-400'
+                      className={`bg-[#0a1120] border rounded-2xl p-6 shadow-xl transition-all cursor-pointer relative group flex flex-col justify-between overflow-hidden ${
+                        estaExpandido ? 'border-[#ffb800] shadow-[0_0_20px_rgba(255,184,0,0.2)]' : 'border-[#9fef00]/30 hover:border-[#9fef00]'
                       }`}
                     >
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-400/5 rounded-full blur-xl group-hover:bg-cyan-400/10 transition" />
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-[#9fef00]/5 rounded-full blur-xl group-hover:bg-[#9fef00]/10 transition" />
                       
                       <div className="z-10">
-                        <span className="text-[10px] text-cyan-400 font-mono font-bold tracking-widest uppercase">
+                        <span className="text-[10px] text-[#9fef00] font-bold tracking-widest uppercase">
                           VECTOR // 0{idx + 1}
                         </span>
-                        <h3 className="text-base font-bold text-white mt-1 group-hover:text-amber-400 transition-colors font-sans">
+                        <h3 className="text-base font-bold text-white mt-1 group-hover:text-[#ffb800] transition-colors font-sans">
                           {tema.nombre}
                         </h3>
                       </div>
 
                       <div className="mt-6 flex items-center justify-between z-10">
-                        <span className="text-[11px] font-mono text-slate-400">
+                        <span className="text-[11px] text-slate-400">
                           {estaExpandido ? '▲ OCULTAR UNIDADES' : '▼ DESPLEGAR UNIDADES'}
                         </span>
-                        <span className="text-amber-400 font-mono font-bold text-xs">⚡</span>
+                        <span className="text-[#ffb800] font-bold text-xs">⚡</span>
                       </div>
 
                       {hoveredTema?.id === tema.id && !estaExpandido && (
-                        <div className="absolute inset-x-0 -top-2 bg-[#040914] border-2 border-amber-400/80 p-4 rounded-2xl text-xs text-slate-200 z-30 shadow-[0_10px_30px_rgba(0,0,0,0.8)] backdrop-blur-md animate-fadeIn">
-                          <div className="flex items-center justify-between border-b border-amber-400/30 pb-1 mb-2 font-mono text-[10px] text-amber-400">
+                        <div className="absolute inset-x-0 -top-2 bg-[#050914] border-2 border-[#ffb800]/80 p-4 rounded-2xl text-xs text-slate-200 z-30 shadow-[0_10px_30px_rgba(0,0,0,0.8)] backdrop-blur-md">
+                          <div className="flex items-center justify-between border-b border-[#ffb800]/30 pb-1 mb-2 text-[10px] text-[#ffb800]">
                             <span>SYS_INFO // DESCRIPCIÓN</span>
                             <span>SEC</span>
                           </div>
@@ -186,18 +206,18 @@ export default function Dashboard({ user, onSelectUnidad, onLogout }) {
                     </div>
 
                     {estaExpandido && (
-                      <div className="mt-3 bg-[#040914] border border-amber-500/40 rounded-2xl p-4 space-y-2.5 animate-fadeIn shadow-inner">
-                        <div className="text-[10px] font-mono text-amber-400 uppercase tracking-widest pb-1 border-b border-slate-800 flex justify-between">
+                      <div className="mt-3 bg-[#050914] border border-[#ffb800]/40 rounded-2xl p-4 space-y-2.5 shadow-inner">
+                        <div className="text-[10px] text-[#ffb800] uppercase tracking-widest pb-1 border-b border-slate-800 flex justify-between">
                           <span>UNIDADES DISPONIBLES</span>
                           <span>[{unidadesDelTema.length}]</span>
                         </div>
 
                         {cargandoUnidadesId === tema.id ? (
-                          <div className="text-center py-4 text-cyan-400 font-mono text-xs animate-pulse">
+                          <div className="text-center py-4 text-[#9fef00] text-xs animate-pulse">
                             [CARGANDO UNIDADES...]
                           </div>
                         ) : unidadesDelTema.length === 0 ? (
-                          <div className="text-center py-3 text-slate-500 font-mono text-xs">
+                          <div className="text-center py-3 text-slate-500 text-xs">
                             No hay unidades registradas en este tema.
                           </div>
                         ) : (
@@ -206,16 +226,16 @@ export default function Dashboard({ user, onSelectUnidad, onLogout }) {
                               key={unidad.id || uIdx}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (onSelectUnidad) onSelectUnidad(unidad);
+                                setUnidadSeleccionada(unidad);
                               }}
-                              className="bg-[#071022] hover:bg-[#0b1830] border border-cyan-500/20 hover:border-cyan-400 p-3 rounded-xl flex items-center justify-between cursor-pointer transition group"
+                              className="bg-[#0a1120] hover:bg-[#101c33] border border-[#9fef00]/30 hover:border-[#9fef00] p-3 rounded-xl flex items-center justify-between cursor-pointer transition group"
                             >
                               <div className="flex items-center gap-3">
-                                <span className="w-6 h-6 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center font-mono text-[10px] text-cyan-300">
+                                <span className="w-6 h-6 rounded-lg bg-[#112614] border border-[#9fef00]/50 flex items-center justify-center text-[10px] text-[#9fef00]">
                                   {uIdx + 1}
                                 </span>
                                 <div>
-                                  <h4 className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">
+                                  <h4 className="text-xs font-bold text-white group-hover:text-[#9fef00] transition-colors">
                                     {unidad.nombre}
                                   </h4>
                                   <p className="text-[10px] text-slate-400 truncate max-w-[240px]">
@@ -223,7 +243,7 @@ export default function Dashboard({ user, onSelectUnidad, onLogout }) {
                                   </p>
                                 </div>
                               </div>
-                              <span className="text-xs text-amber-400 font-mono">➔</span>
+                              <span className="text-xs text-[#ffb800]">MAPA ➔</span>
                             </div>
                           ))
                         )}
@@ -236,12 +256,13 @@ export default function Dashboard({ user, onSelectUnidad, onLogout }) {
           )}
         </div>
 
+        {/* Utilidades de Taller */}
         <div className="space-y-4 pt-4">
           <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <h2 className="text-sm font-mono font-bold text-slate-200 tracking-wider flex items-center gap-2 uppercase">
-              <span className="text-amber-400">#</span> Utilidades de Taller (Cálculo Eléctrico)
+            <h2 className="text-sm font-bold text-slate-200 tracking-wider flex items-center gap-2 uppercase">
+              <span className="text-[#ffb800]">#</span> Utilidades de Taller (Cálculo Eléctrico)
             </h2>
-            <span className="text-[10px] font-mono text-slate-500">[MODULES: 4 AVAILABLE]</span>
+            <span className="text-[10px] text-slate-400">[MODULES: 4 AVAILABLE]</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -251,16 +272,16 @@ export default function Dashboard({ user, onSelectUnidad, onLogout }) {
               { id: 'ruptura', title: 'Capacidad de Ruptura', desc: 'Interruptores termomagnéticos y curvas.' },
               { id: 'colores', title: 'Código de Colores', desc: 'Identificación de fases y resistencias.' }
             ].map((tool) => (
-              <div key={tool.id} className="bg-[#071022] border border-cyan-500/20 hover:border-amber-400/50 p-5 rounded-2xl flex flex-col justify-between transition group">
+              <div key={tool.id} className="bg-[#0a1120] border border-[#9fef00]/30 hover:border-[#ffb800]/60 p-5 rounded-2xl flex flex-col justify-between transition group">
                 <div>
-                  <h4 className="font-mono font-bold text-xs text-cyan-300 group-hover:text-amber-400 uppercase tracking-wide mb-1">
+                  <h4 className="font-bold text-xs text-[#9fef00] group-hover:text-[#ffb800] uppercase tracking-wide mb-1">
                     {tool.title}
                   </h4>
                   <p className="text-[11px] text-slate-400 leading-normal">{tool.desc}</p>
                 </div>
                 <button 
                   onClick={() => setCalculadoraActiva(tool.id)} 
-                  className="mt-5 w-full py-2 bg-[#0b162c] hover:bg-amber-400 text-amber-400 hover:text-slate-950 font-mono text-[11px] font-bold rounded-lg border border-amber-500/30 transition uppercase tracking-wider"
+                  className="mt-5 w-full py-2 bg-[#0d162c] hover:bg-[#ffb800] text-[#ffb800] hover:text-slate-950 text-[11px] font-bold rounded-lg border border-[#ffb800]/40 transition uppercase tracking-wider cursor-pointer"
                 >
                   ABRIR UTILIDAD ⚡
                 </button>
@@ -270,22 +291,22 @@ export default function Dashboard({ user, onSelectUnidad, onLogout }) {
         </div>
 
         {calculadoraActiva && (
-          <div className="fixed inset-0 z-50 bg-[#030712]/90 backdrop-blur-md flex items-center justify-center p-4">
-            <div className="bg-[#071022] border-2 border-cyan-400 rounded-3xl p-6 max-w-md w-full relative shadow-[0_0_50px_rgba(0,240,255,0.2)]">
+          <div className="fixed inset-0 z-50 bg-[#050914]/90 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="bg-[#0a1120] border-2 border-[#9fef00] rounded-3xl p-6 max-w-md w-full relative shadow-[0_0_50px_rgba(159,239,0,0.2)]">
               <button 
                 onClick={() => setCalculadoraActiva(null)} 
-                className="absolute top-4 right-4 text-slate-400 hover:text-white font-mono text-xs bg-[#0b162c] border border-slate-700 px-2.5 py-1 rounded-lg"
+                className="absolute top-4 right-4 text-slate-400 hover:text-white text-xs bg-[#0d162c] border border-slate-700 px-2.5 py-1 rounded-lg cursor-pointer"
               >
                 ✕
               </button>
               <div className="flex items-center gap-2 mb-3">
-                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-                <h3 className="text-xs font-mono font-bold text-cyan-300 uppercase tracking-widest">
+                <span className="w-2 h-2 rounded-full bg-[#9fef00] animate-ping" />
+                <h3 className="text-xs font-bold text-[#9fef00] uppercase tracking-widest">
                   UTILIDAD // {calculadoraActiva}
                 </h3>
               </div>
               <p className="text-xs text-slate-300 mb-4 font-sans">Módulo de cálculo activo conforme a especificaciones oficiales SEC.</p>
-              <div className="p-4 bg-[#030712] rounded-xl text-center font-mono text-xs text-amber-400 border border-cyan-500/30 shadow-inner">
+              <div className="p-4 bg-[#050914] rounded-xl text-center text-xs text-[#ffb800] border border-[#9fef00]/30 shadow-inner">
                 [OUTPUT: 16A - SECCIÓN NOMINAL 2.5 mm²]
               </div>
             </div>
@@ -293,7 +314,7 @@ export default function Dashboard({ user, onSelectUnidad, onLogout }) {
         )}
       </main>
 
-      <footer className="bg-[#030712] border-t border-cyan-500/20 py-4 px-6 text-center font-mono text-[10px] text-slate-500 z-10 flex justify-between items-center max-w-7xl mx-auto w-full">
+      <footer className="bg-[#050914] border-t border-[#9fef00]/30 py-4 px-6 text-center text-[10px] text-slate-400 z-10 flex justify-between items-center max-w-7xl mx-auto w-full">
         <span>[SYSTEM: SEC_COMPLIANT]</span>
         <span>AreaElectrica & Tiuque-Tec • Formación que ilumina</span>
         <span>[LATENCY: 14ms]</span>
