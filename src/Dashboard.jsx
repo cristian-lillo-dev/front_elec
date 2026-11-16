@@ -1,320 +1,311 @@
-import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
-import Particles from '@tsparticles/react';
-import { loadSlim } from '@tsparticles/slim';
-import wallMapa from './assets/wall_mapa.jpeg';
-import LeccionModal from './LeccionModal';
+import React, { useState, useEffect } from 'react';
+import logoImg from './assets/logo_s.png';
+import DetalleUnidad from './DetalleUnidad';
+import CalculadoraAlimentadores from './CalculadoraAlimentadores';
 
 const API_BASE_URL = 'https://backelec1-production.up.railway.app/api';
-const PASO_Y = 130;
-const PATRON_X = [30, 50, 70, 50];
-const getXPercentage = (index) => PATRON_X[index % PATRON_X.length];
 
-// Conexiones SVG estilo circuito de alta tensión
-const ConexionesSVG = memo(({ totalElementos, alturaTotal }) => {
-  const puntos = useMemo(() => {
-    return Array.from({ length: totalElementos }).map((_, i) => ({
-      x: getXPercentage(i),
-      y: 55 + i * PASO_Y,
-    }));
-  }, [totalElementos]);
-
-  return (
-    <svg 
-      className="absolute inset-0 w-full pointer-events-none z-0 overflow-visible"
-      style={{ height: `${alturaTotal}px` }}
-      viewBox={`0 0 100 ${alturaTotal}`}
-      preserveAspectRatio="none"
-    >
-      <defs>
-        <linearGradient id="electricCircuit" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#ffb800" />
-          <stop offset="50%" stopColor="#9fef00" />
-          <stop offset="100%" stopColor="#00f0ff" />
-        </linearGradient>
-
-        <filter id="electricGlow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="2.5" result="glow" />
-          <feMerge>
-            <feMergeNode in="glow" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
-      {puntos.map((pt, i) => {
-        if (i === puntos.length - 1) return null;
-        const next = puntos[i + 1];
-        const cyMid = (pt.y + next.y) / 2;
-        const pathData = `M ${pt.x} ${pt.y} C ${pt.x} ${cyMid}, ${next.x} ${cyMid}, ${next.x} ${next.y}`;
-
-        return (
-          <g key={`circuito-${i}`}>
-            <path d={pathData} fill="none" stroke="#04070d" strokeWidth="6" strokeLinecap="round" />
-            <path d={pathData} fill="none" stroke="#ffb800" strokeWidth="2.5" strokeLinecap="round" filter="url(#electricGlow)" className="opacity-50" />
-            <path d={pathData} fill="none" stroke="url(#electricCircuit)" strokeWidth="1.5" strokeLinecap="round" className="opacity-95" />
-            <path d={pathData} fill="none" stroke="#ffffff" strokeWidth="0.9" strokeDasharray="3, 6" strokeLinecap="round" className="opacity-90 animate-[pulse_1s_infinite]" />
-          </g>
-        );
-      })}
-    </svg>
-  );
-});
-
-export default function DetalleUnidad({ unidad, usuarioId, onVolver, onSelectLeccion }) {
-  const [lecciones, setLecciones] = useState([]);
-  const [leccionesCompletadasIds, setLeccionesCompletadasIds] = useState([]);
+export default function Dashboard({ user, onLogout }) {
+  const [temas, setTemas] = useState([]);
   const [cargando, setCargando] = useState(true);
-  const [hoveredLeccion, setHoveredLeccion] = useState(null);
-  const [leccionActivaModal, setLeccionActivaModal] = useState(null);
-
-  const particlesInit = useCallback(async (engine) => {
-    await loadSlim(engine);
-  }, []);
-
-  const particlesOptions = useMemo(() => ({
-    fullScreen: { enable: false },
-    background: { color: { value: 'transparent' } },
-    fpsLimit: 60,
-    particles: {
-      color: { value: ['#ffb800', '#9fef00', '#00f0ff'] },
-      links: { color: '#ffb800', distance: 90, enable: true, opacity: 0.1, width: 1 },
-      move: { enable: true, speed: 0.45, outModes: { default: 'bounce' } },
-      number: { density: { enable: true, area: 700 }, value: 35 },
-      opacity: { value: { min: 0.25, max: 0.6 } },
-      shape: { type: 'circle' },
-      size: { value: { min: 1, max: 2.5 } },
-    },
-    detectRetina: true,
-  }), []);
+  const [hoveredTema, setHoveredTema] = useState(null);
+  const [temaExpandido, setTemaExpandido] = useState(null);
+  const [unidadesMap, setUnidadesMap] = useState({});
+  const [cargandoUnidadesId, setCargandoUnidadesId] = useState(null);
+  const [calculadoraActiva, setCalculadoraActiva] = useState(null);
+  
+  // Estado para manejar la unidad seleccionada y renderizar el mapa de lecciones
+  const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
+  const [leccionActiva, setLeccionActiva] = useState(null);
 
   useEffect(() => {
-    if (!unidad) return;
-    setCargando(true);
-    
-    fetch(`${API_BASE_URL}/lecciones/?unidad=${unidad.id}`)
+    fetch(`${API_BASE_URL}/temas/?ordering=orden`)
       .then(res => res.json())
       .then(data => {
-        const lista = Array.isArray(data) ? data : (data.results || []);
-        const filtradas = lista
-          .filter(l => l.unidad === unidad.id || !l.unidad)
-          .sort((a, b) => (a.numero_leccion || a.orden || 0) - (b.numero_leccion || b.orden || 0));
-
-        const finales = filtradas.length > 0 ? filtradas : [
-          { id: 1001, numero_leccion: 1, nombre: 'Fundamentos de Acometidas', descripcion: 'Análisis de vulnerabilidades y empalmes domiciliarios SEC.' },
-          { id: 1002, numero_leccion: 2, nombre: 'Empalmes Monofásicos', descripcion: 'Configuración de protecciones y medidores de energía.' },
-          { id: 1003, numero_leccion: 3, nombre: 'Protecciones y Cortes', descripcion: 'Protocolos normativos sobre tableros generales.' }
-        ];
-        setLecciones(finales);
-        if (finales.length > 0) {
-          setLeccionesCompletadasIds([finales[0].id]);
-        }
+        setTemas(data);
         setCargando(false);
       })
-      .catch(() => {
-        const respaldo = [
-          { id: 1001, numero_leccion: 1, nombre: 'Fundamentos de Acometidas', descripcion: 'Análisis de vulnerabilidades y empalmes domiciliarios SEC.' },
-          { id: 1002, numero_leccion: 2, nombre: 'Empalmes Monofásicos', descripcion: 'Configuración de protecciones y medidores de energía.' },
-          { id: 1003, numero_leccion: 3, nombre: 'Protecciones y Cortes', descripcion: 'Protocolos normativos sobre tableros generales.' }
-        ];
-        setLecciones(respaldo);
-        setLeccionesCompletadasIds([1001]);
+      .catch(err => {
+        console.warn('Usando temas de respaldo:', err);
+        setTemas([
+          { id: 1, orden: 1, nombre: 'Pliegos RIC: Normativa y Aplicación', descripcion: 'Estudio de los pliegos técnicos normativos de la Superintendencia de Electricidad y Combustibles (SEC).' },
+          { id: 2, orden: 2, nombre: 'Seguridad Eléctrica en el Trabajo', descripcion: 'Protocolos de prevención de riesgos, uso de EPP y normativa de bloqueo.' },
+          { id: 3, orden: 3, nombre: 'Electricidad Básica y Circuitos', descripcion: 'Fundamentos de corriente alterna, continua, ley de Ohm y cálculo básico.' }
+        ]);
         setCargando(false);
       });
-  }, [unidad]);
+  }, []);
 
-  const handleMarcarCompletada = (leccionCompletada) => {
-    setLeccionesCompletadasIds(prev =>
-      prev.includes(leccionCompletada.id) ? prev : [...prev, leccionCompletada.id]
-    );
-    if (onSelectLeccion) onSelectLeccion(leccionCompletada);
+  const handleToggleTema = async (tema) => {
+    if (temaExpandido === tema.id) {
+      setTemaExpandido(null);
+      return;
+    }
+    setTemaExpandido(tema.id);
+
+    if (!unidadesMap[tema.id]) {
+      setCargandoUnidadesId(tema.id);
+      try {
+        const res = await fetch(`${API_BASE_URL}/unidades/?tema=${tema.id}`);
+        const data = await res.json();
+        setUnidadesMap(prev => ({ ...prev, [tema.id]: data }));
+      } catch (err) {
+        console.warn('Usando unidades de respaldo:', err);
+        setUnidadesMap(prev => ({
+          ...prev,
+          [tema.id]: [
+            { id: 101, numero_unidad: 1, nombre: 'Unidad 1: Empalmes y Acometidas', descripcion: 'Normativa RIC N° 01 sobre acometidas.' },
+            { id: 102, numero_unidad: 2, nombre: 'Unidad 2: Tableros de Distribución', descripcion: 'Exigencias reglamentarias para gabinetes.' }
+          ]
+        }));
+      } finally {
+        setCargandoUnidadesId(null);
+      }
+    }
   };
 
-  const alturaTotal = Math.max(540, lecciones.length * PASO_Y + 120);
-  const retosCompletados = leccionesCompletadasIds.length;
-  const porcentajeProgreso = lecciones.length > 0 ? Math.round((retosCompletados / lecciones.length) * 100) : 0;
+  const nombreUsuario = user?.username || user?.name || "Operador";
+
+  // Si el usuario seleccionó la Calculadora de Alimentadores
+  if (calculadoraActiva === 'alimentadores') {
+    return <CalculadoraAlimentadores onVolver={() => setCalculadoraActiva(null)} />;
+  }
+
+  // Si el usuario seleccionó una unidad, mostramos el mapa de lecciones
+  if (unidadSeleccionada) {
+    return (
+      <DetalleUnidad 
+        unidad={unidadSeleccionada} 
+        onVolver={() => setUnidadSeleccionada(null)} 
+        onSelectLeccion={(leccion) => setLeccionActiva(leccion)} 
+      />
+    );
+  }
 
   return (
-    <div className="relative min-h-screen text-white font-mono flex flex-col justify-between selection:bg-[#ffb800] selection:text-slate-950 overflow-x-hidden">
+    <div className="min-h-screen bg-[#050914] text-slate-100 font-mono flex flex-col justify-between selection:bg-[#9fef00] selection:text-slate-950 relative overflow-x-hidden">
       
-      {/* Fondo con Textura wall_mapa.jpeg */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none z-0 filter brightness-50 contrast-125"
-        style={{ backgroundImage: `url(${wallMapa})` }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#060913]/90 via-[#0b0f19]/85 to-[#060913]/95 pointer-events-none z-0" />
+      {/* Grid Técnico de Fondo Verde Hacker / Oscuro */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#9fef0008_1px,transparent_1px),linear-gradient(to_bottom,#9fef0008_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
-      <Particles id="tsparticles-htb" init={particlesInit} options={particlesOptions} className="absolute inset-0 pointer-events-none z-1" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffb80008_1px,transparent_1px),linear-gradient(to_bottom,#ffb80008_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none z-1" />
+      {/* Header Estilo Terminal HUD */}
+      <header className="sticky top-0 z-50 bg-[#080d1a]/95 backdrop-blur-xl border-b border-[#9fef00]/30 px-6 py-3.5 shadow-[0_0_20px_rgba(159,239,0,0.1)]">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center space-x-3 cursor-pointer group">
+            <img src={logoImg} alt="AreaElectrica Logo" className="w-9 h-9 object-contain rounded-xl group-hover:scale-105 transition border border-[#9fef00]/40" />
+            <div className="flex flex-col">
+              <span className="text-sm font-black tracking-wider text-white uppercase">
+                AREA<span className="text-[#9fef00]">ELECTRICA</span> <span className="text-[#ffb800] text-[10px]">[ROOT_HUD]</span>
+              </span>
+              <span className="text-[9px] text-slate-400 tracking-widest">SEC_RIC_SYS v4.2 // SECURE</span>
+            </div>
+          </div>
 
-      {/* Header Estilo Terminal Prompt con Barra de Progreso */}
-      <header className="sticky top-3 z-30 mx-auto w-[95%] max-w-3xl bg-[#0d1322]/95 border border-[#ffb800]/40 rounded-xl px-4 py-3 shadow-[0_0_30px_rgba(255,184,0,0.2)] backdrop-blur-xl">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-1.5 bg-[#0d1527] border border-[#9fef00]/40 px-3 py-1 rounded-lg text-xs text-[#9fef00] shadow-inner">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#9fef00] animate-ping" />
+              <span>STREAK: 5D</span>
+            </div>
+            <div className="flex items-center space-x-1.5 bg-[#0d1527] border border-amber-500/40 px-3 py-1 rounded-lg text-xs text-amber-400 shadow-inner">
+              <span>🪙</span>
+              <span>150 NC</span>
+            </div>
+            <div className="flex items-center space-x-1.5 bg-[#0d1527] border border-rose-500/40 px-3 py-1 rounded-lg text-xs text-rose-400 shadow-inner">
+              <span>❤️</span>
+              <span>5 HP</span>
+            </div>
             <button 
-              onClick={onVolver} 
-              className="bg-[#141d30] hover:bg-[#ffb800] text-[#ffb800] hover:text-slate-950 border border-[#ffb800]/50 px-3 py-1 rounded-lg text-xs font-bold transition active:scale-95 flex items-center gap-1.5 cursor-pointer shadow-md"
+              onClick={onLogout}
+              className="w-8 h-8 rounded-xl bg-[#0d1527] hover:bg-rose-950/60 border border-slate-700 hover:border-rose-500/60 flex items-center justify-center text-slate-400 hover:text-rose-400 text-xs transition-all cursor-pointer ml-2"
+              title="Cerrar Sesión"
             >
-              <span>◄</span> cd ..
+              ⌁
             </button>
-            <div className="truncate">
-              <span className="text-[11px] font-bold text-[#ffb800] block truncate tracking-wider uppercase">
-                root@sec-ric:~# ./{unidad?.nombre?.toLowerCase().replace(/\s+/g, '_') || 'unidad'}
-              </span>
-              <span className="text-[9px] text-slate-400">
-                [STATUS: <span className="text-[#9fef00]">ACCESS_GRANTED</span>] // {lecciones.length} CHALLENGES
-              </span>
-            </div>
           </div>
-
-          <div className="flex items-center gap-2 text-[11px]">
-            {unidad?.pdf_url && (
-              <a
-                href={unidad.pdf_url}
-                target="_blank"
-                rel="noreferrer"
-                className="text-[#9fef00] bg-[#112614] border border-[#9fef00]/40 px-2.5 py-1 rounded-md hover:bg-[#9fef00] hover:text-slate-950 transition font-bold"
-              >
-                📄 PLIEGO_PDF
-              </a>
-            )}
-            <div className="flex items-center gap-1 text-[#ffb800] bg-[#261f0c] border border-[#ffb800]/40 px-2.5 py-1 rounded-md shadow-inner">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ffb800] animate-ping" />
-              <span>HIGH_VOLTAGE</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Barra de Progreso de la Unidad */}
-        <div className="w-full bg-[#080c14] border border-[#1f293d] rounded-full h-2.5 overflow-hidden p-0.5 relative">
-          <div 
-            className="bg-gradient-to-r from-[#ffb800] via-[#9fef00] to-[#00f0ff] h-full rounded-full transition-all duration-500 shadow-[0_0_12px_#ffb800]"
-            style={{ width: `${porcentajeProgreso}%` }}
-          />
-        </div>
-        <div className="flex justify-between items-center text-[9px] text-slate-400 mt-1 font-mono">
-          <span>PROGRESO DE UNIDAD: {porcentajeProgreso}%</span>
-          <span className="text-[#9fef00]">{retosCompletados}/{lecciones.length} COMPLETADOS</span>
         </div>
       </header>
 
-      {/* Panel Flotante Estilo HTB Box Info */}
-      {hoveredLeccion && (
-        <aside className="fixed right-6 top-28 z-40 w-80 bg-[#0d1322]/95 border-2 border-[#ffb800] rounded-2xl p-4 shadow-[0_0_35px_rgba(255,184,0,0.3)] backdrop-blur-md pointer-events-none animate-fadeIn">
-          <div className="flex items-center justify-between border-b border-[#ffb800]/30 pb-2 mb-2 text-[10px] text-[#ffb800]">
-            <span className="font-bold uppercase tracking-widest flex items-center gap-1">
-              <span>⚡</span> TARGET // {hoveredLeccion.nombre}
-            </span>
-            <span className="bg-[#ffb800]/20 px-2 py-0.5 rounded text-[9px] text-[#ffb800]">220V / 380V</span>
+      <main className="max-w-6xl mx-auto px-4 py-8 w-full space-y-8 flex-1 relative z-10">
+        
+        {/* Banner de Bienvenida Root */}
+        <div className="bg-gradient-to-r from-[#0a1424] to-[#050a14] border border-[#9fef00]/40 rounded-2xl p-6 md:p-8 shadow-[0_0_30px_rgba(159,239,0,0.1)] flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#9fef00]/5 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="space-y-2 z-10">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-[#112614] text-[#9fef00] border border-[#9fef00]/50 uppercase tracking-widest">
+                ACCESS_GRANTED // {user?.categoria || "ESTUDIANTE_SEC"}
+              </span>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-black text-white">
+              USER_ROOT: <span className="text-[#ffb800]">{nombreUsuario}</span>
+            </h1>
+            <p className="text-slate-300 text-xs md:text-sm font-sans max-w-lg">
+              Selecciona un vector de estudio normativo y haz clic en una unidad para desplegar su mapa de lecciones interactivo o utiliza las herramientas de taller.
+            </p>
           </div>
-          <p className="text-[11px] text-slate-300 leading-relaxed font-sans">
-            {hoveredLeccion.descripcion || 'Análisis técnico y cumplimiento de normativas eléctricas vigentes.'}
-          </p>
-          <div className="mt-3 pt-2 border-t border-slate-800 flex justify-between text-[9px] text-slate-400">
-            <span>REWARD: 100 XP</span>
-            <span className="text-[#9fef00]">[CLICK TO SPAWN]</span>
+
+          <div className="bg-[#050914] border border-[#ffb800]/40 px-6 py-4 rounded-xl text-center z-10 shadow-inner">
+            <p className="text-[10px] text-slate-400 uppercase tracking-widest">EXPERIENCIA TOTAL</p>
+            <p className="text-xl md:text-2xl font-black text-[#ffb800]">2,450 XP</p>
           </div>
-        </aside>
-      )}
+        </div>
 
-      {/* Mapa de Desafíos / Lecciones */}
-      <main className="relative w-full flex-1 overflow-y-auto py-16 px-4 z-10 flex justify-center custom-scrollbar">
-        {cargando ? (
-          <div className="text-[#ffb800] font-mono text-xs animate-pulse my-auto flex flex-col items-center gap-2">
-            <div className="w-6 h-6 border-2 border-[#ffb800] border-t-transparent rounded-full animate-spin" />
-            [CARGANDO RETOS ELÉCTRICOS...]
+        {/* Sección de Vectores de Estudio */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h2 className="text-sm font-bold text-slate-200 tracking-wider flex items-center gap-2 uppercase">
+              <span className="text-[#9fef00]">#</span> Vectores de Estudio (Normativa SEC RIC)
+            </h2>
+            <span className="text-[10px] text-slate-400">[HAZ CLIC EN UNA UNIDAD PARA ABRIR EL MAPA]</span>
           </div>
-        ) : (
-          <div className="relative w-full max-w-lg" style={{ height: `${alturaTotal}px` }}>
-            <ConexionesSVG totalElementos={lecciones.length} alturaTotal={alturaTotal} />
 
-            {lecciones.map((leccion, idx) => {
-              const xPos = getXPercentage(idx);
-              const yPos = 55 + idx * PASO_Y;
-              const completado = leccionesCompletadasIds.includes(leccion.id);
-              const activo = !completado && (idx === 0 || leccionesCompletadasIds.includes(lecciones[idx - 1]?.id));
-              const isHovered = hoveredLeccion?.id === leccion.id;
+          {cargando ? (
+            <div className="text-center py-16 text-[#9fef00] text-xs animate-pulse">
+              [ANALIZANDO NODOS REMOTOS DESDE RAILWAY...]
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative">
+              {temas.map((tema, idx) => {
+                const estaExpandido = temaExpandido === tema.id;
+                const unidadesDelTema = unidadesMap[tema.id] || [];
 
-              return (
-                <div
-                  key={leccion.id || idx}
-                  style={{ left: `${xPos}%`, top: `${yPos}px`, transform: 'translate(-50%, -50%)' }}
-                  className="absolute z-10 flex flex-col items-center group cursor-pointer"
-                  onMouseEnter={() => setHoveredLeccion(leccion)}
-                  onMouseLeave={() => setHoveredLeccion(null)}
-                  onClick={() => setLeccionActivaModal(leccion)}
-                >
-                  {activo && (
-                    <div className="absolute -top-11 flex flex-col items-center animate-bounce z-20">
-                      <div className="bg-gradient-to-r from-[#ffb800] to-[#9fef00] text-slate-950 font-bold text-[9px] tracking-widest px-2.5 py-0.5 rounded shadow-[0_0_15px_rgba(255,184,0,0.8)] uppercase">
-                        ⚡ SPAWN BOX
-                      </div>
-                      <div className="w-2 h-2 bg-[#ffb800] rotate-45 -mt-1 shadow-sm" />
-                    </div>
-                  )}
-
-                  <div className="relative">
-                    {activo && (
-                      <div 
-                        className="absolute -inset-3 rounded-xl border border-dashed border-[#ffb800] animate-spin opacity-80" 
-                        style={{ animationDuration: '8s' }} 
-                      />
-                    )}
-
-                    <div
-                      className={`absolute -inset-1 rounded-xl blur-sm transition-opacity duration-300 ${
-                        activo ? 'bg-[#ffb800]/40 opacity-100 animate-pulse' : completado ? 'bg-[#9fef00]/30 opacity-70' : isHovered ? 'bg-[#00f0ff]/30 opacity-100' : 'opacity-0'
+                return (
+                  <div key={tema.id || idx} className="flex flex-col">
+                    <div 
+                      onMouseEnter={() => setHoveredTema(tema)}
+                      onMouseLeave={() => setHoveredTema(null)}
+                      onClick={() => handleToggleTema(tema)}
+                      className={`bg-[#0a1120] border rounded-2xl p-6 shadow-xl transition-all cursor-pointer relative group flex flex-col justify-between overflow-hidden ${
+                        estaExpandido ? 'border-[#ffb800] shadow-[0_0_20px_rgba(255,184,0,0.2)]' : 'border-[#9fef00]/30 hover:border-[#9fef00]'
                       }`}
-                    />
+                    >
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-[#9fef00]/5 rounded-full blur-xl group-hover:bg-[#9fef00]/10 transition" />
+                      
+                      <div className="z-10">
+                        <span className="text-[10px] text-[#9fef00] font-bold tracking-widest uppercase">
+                          VECTOR // 0{idx + 1}
+                        </span>
+                        <h3 className="text-base font-bold text-white mt-1 group-hover:text-[#ffb800] transition-colors font-sans">
+                          {tema.nombre}
+                        </h3>
+                      </div>
 
-                    <div className={`relative w-20 h-20 rounded-xl flex flex-col items-center justify-center transition-all duration-150 active:translate-y-1 border-2 ${
-                      completado 
-                        ? 'bg-[#0e2216] border-[#9fef00] shadow-[0_5px_0_#3f6212,0_0_15px_rgba(159,239,0,0.3)] text-[#9fef00]' 
-                        : activo 
-                        ? 'bg-[#261f0c] border-[#ffb800] shadow-[0_5px_0_#b45309,0_0_20px_rgba(255,184,0,0.5)] text-[#ffb800] scale-105' 
-                        : 'bg-[#0f1420] border-[#22304a] shadow-[0_4px_0_#090d16] text-slate-400 hover:border-[#ffb800]/50'
-                    }`}>
-                      <span className="text-xl filter drop-shadow">
-                        {completado ? '✔' : activo ? '⚡' : '🔒'}
-                      </span>
-                      <span className="text-[9px] font-bold tracking-wider mt-1 opacity-90">
-                        CH-{String(leccion.numero_leccion || leccion.orden || idx + 1).padStart(2, '0')}
-                      </span>
+                      <div className="mt-6 flex items-center justify-between z-10">
+                        <span className="text-[11px] text-slate-400">
+                          {estaExpandido ? '▲ OCULTAR UNIDADES' : '▼ DESPLEGAR UNIDADES'}
+                        </span>
+                        <span className="text-[#ffb800] font-bold text-xs">⚡</span>
+                      </div>
                     </div>
-                  </div>
 
-                  <span className={`mt-2.5 px-3 py-1 rounded-md text-[10px] font-mono tracking-wide transition-all shadow-sm ${
-                    isHovered ? 'bg-[#1b263b] text-[#ffb800] border border-[#ffb800]/60 scale-105' : 'bg-[#0d1322]/90 text-slate-300 border border-[#1f293d]'
-                  }`}>
-                    {leccion.nombre}
-                  </span>
-                </div>
-              );
-            })}
+                    {estaExpandido && (
+                      <div className="mt-3 bg-[#050914] border border-[#ffb800]/40 rounded-2xl p-4 space-y-2.5 shadow-inner">
+                        <div className="text-[10px] text-[#ffb800] uppercase tracking-widest pb-1 border-b border-slate-800 flex justify-between">
+                          <span>UNIDADES DISPONIBLES</span>
+                          <span>[{unidadesDelTema.length}]</span>
+                        </div>
+
+                        {cargandoUnidadesId === tema.id ? (
+                          <div className="text-center py-4 text-[#9fef00] text-xs animate-pulse">
+                            [CARGANDO UNIDADES...]
+                          </div>
+                        ) : unidadesDelTema.length === 0 ? (
+                          <div className="text-center py-3 text-slate-500 text-xs">
+                            No hay unidades registradas en este tema.
+                          </div>
+                        ) : (
+                          unidadesDelTema.map((unidad, uIdx) => (
+                            <div
+                              key={unidad.id || uIdx}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setUnidadSeleccionada(unidad);
+                              }}
+                              className="bg-[#0a1120] hover:bg-[#101c33] border border-[#9fef00]/30 hover:border-[#9fef00] p-3 rounded-xl flex items-center justify-between cursor-pointer transition group"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="w-6 h-6 rounded-lg bg-[#112614] border border-[#9fef00]/50 flex items-center justify-center text-[10px] text-[#9fef00]">
+                                  {uIdx + 1}
+                                </span>
+                                <div>
+                                  <h4 className="text-xs font-bold text-white group-hover:text-[#9fef00] transition-colors">
+                                    {unidad.nombre}
+                                  </h4>
+                                  <p className="text-[10px] text-slate-400 truncate max-w-[240px]">
+                                    {unidad.descripcion}
+                                  </p>
+                                </div>
+                              </div>
+                              <span className="text-xs text-[#ffb800]">MAPA ➔</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Utilidades de Taller */}
+        <div className="space-y-4 pt-4">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h2 className="text-sm font-bold text-slate-200 tracking-wider flex items-center gap-2 uppercase">
+              <span className="text-[#ffb800]">#</span> Utilidades de Taller (Cálculo Eléctrico)
+            </h2>
+            <span className="text-[10px] text-slate-400">[MODULES: 4 AVAILABLE]</span>
           </div>
-        )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Tarjeta interactiva conectada a la Calculadora de Alimentadores */}
+            <div className="bg-[#0a1120] border-2 border-[#ffb800] hover:border-[#9fef00] p-5 rounded-2xl flex flex-col justify-between transition group shadow-[0_0_15px_rgba(255,184,0,0.15)]">
+              <div>
+                <span className="text-[9px] bg-[#261f0c] text-[#ffb800] px-2 py-0.5 rounded border border-[#ffb800]/40 uppercase">RIC N°03 / 04</span>
+                <h4 className="font-bold text-xs text-white group-hover:text-[#ffb800] uppercase tracking-wide mt-2 mb-1">
+                  Dimensionamiento Alimentadores
+                </h4>
+                <p className="text-[11px] text-slate-400 leading-normal">Cálculo de sección y caída de tensión reglamentaria.</p>
+              </div>
+              <button 
+                onClick={() => setCalculadoraActiva('alimentadores')} 
+                className="mt-5 w-full py-2 bg-[#ffb800] hover:bg-[#e0a100] text-slate-950 text-[11px] font-bold rounded-lg transition uppercase tracking-wider cursor-pointer shadow-md"
+              >
+                ABRIR HERRAMIENTA ⚡
+              </button>
+            </div>
+
+            {/* Otras utilidades de respaldo */}
+            {[
+              { id: 'awg', title: 'Convertidor AWG', desc: 'Calibre AWG a mm² y corriente admisible.' },
+              { id: 'corrientes', title: 'Tabla de Corrientes', desc: 'Capacidad de transporte según canalización.' },
+              { id: 'ruptura', title: 'Capacidad de Ruptura', desc: 'Interruptores termomagnéticos y curvas.' }
+            ].map((tool) => (
+              <div key={tool.id} className="bg-[#0a1120] border border-[#9fef00]/30 hover:border-[#ffb800]/60 p-5 rounded-2xl flex flex-col justify-between transition group">
+                <div>
+                  <h4 className="font-bold text-xs text-[#9fef00] group-hover:text-[#ffb800] uppercase tracking-wide mb-1">
+                    {tool.title}
+                  </h4>
+                  <p className="text-[11px] text-slate-400 leading-normal">{tool.desc}</p>
+                </div>
+                <button 
+                  onClick={() => alert(`Módulo ${tool.title} en desarrollo.`)} 
+                  className="mt-5 w-full py-2 bg-[#0d162c] hover:bg-[#ffb800] text-[#ffb800] hover:text-slate-950 text-[11px] font-bold rounded-lg border border-[#ffb800]/40 transition uppercase tracking-wider cursor-pointer"
+                >
+                  ABRIR UTILIDAD ⚡
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       </main>
 
-      {/* Modal Independiente de Lección y Preguntas */}
-      {leccionActivaModal && (
-        <LeccionModal
-          unidad={unidad}
-          leccion={leccionActivaModal}
-          usuarioId={usuarioId}
-          onClose={() => setLeccionActivaModal(null)}
-          onCompletar={handleMarcarCompletada}
-        />
-      )}
-
-      {/* Footer Estilo CLI Status */}
-      <footer className="sticky bottom-0 w-full bg-[#060913]/95 border-t border-[#1f293d] px-4 py-2.5 z-30 flex items-center justify-between backdrop-blur-md text-[10px]">
-        <div className="flex items-center gap-2">
-          <span className="text-[#ffb800]">root@tiuque-tec:~$</span>
-          <span className="text-slate-400 animate-pulse">high_voltage_grid [SEC_RIC_ACTIVE]</span>
-        </div>
-        <span className="text-[#9fef00] font-bold flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-[#9fef00] animate-ping" />
-          SYSTEM_ONLINE
-        </span>
+      <footer className="bg-[#050914] border-t border-[#9fef00]/30 py-4 px-6 text-center text-[10px] text-slate-400 z-10 flex justify-between items-center max-w-7xl mx-auto w-full">
+        <span>[SYSTEM: SEC_COMPLIANT]</span>
+        <span>AreaElectrica & Tiuque-Tec • Formación que ilumina</span>
+        <span>[LATENCY: 14ms]</span>
       </footer>
 
     </div>

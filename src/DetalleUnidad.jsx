@@ -2,13 +2,14 @@ import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import Particles from '@tsparticles/react';
 import { loadSlim } from '@tsparticles/slim';
 import wallMapa from './assets/wall_mapa.jpeg';
+import LeccionModal from './LeccionModal';
 
 const API_BASE_URL = 'https://backelec1-production.up.railway.app/api';
 const PASO_Y = 130;
 const PATRON_X = [30, 50, 70, 50];
 const getXPercentage = (index) => PATRON_X[index % PATRON_X.length];
 
-// 1. Conexiones SVG estilo circuito de alta tensión con gradiente eléctrico amarillo/verde/azul
+// Conexiones SVG estilo circuito de alta tensión
 const ConexionesSVG = memo(({ totalElementos, alturaTotal }) => {
   const puntos = useMemo(() => {
     return Array.from({ length: totalElementos }).map((_, i) => ({
@@ -26,9 +27,9 @@ const ConexionesSVG = memo(({ totalElementos, alturaTotal }) => {
     >
       <defs>
         <linearGradient id="electricCircuit" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#ffb800" />    {/* Amarillo Eléctrico Alto Voltaje */}
-          <stop offset="50%" stopColor="#9fef00" />   {/* Verde Hacker */}
-          <stop offset="100%" stopColor="#00f0ff" />  {/* Neón Eléctrico */}
+          <stop offset="0%" stopColor="#ffb800" />
+          <stop offset="50%" stopColor="#9fef00" />
+          <stop offset="100%" stopColor="#00f0ff" />
         </linearGradient>
 
         <filter id="electricGlow" x="-20%" y="-20%" width="140%" height="140%">
@@ -59,10 +60,12 @@ const ConexionesSVG = memo(({ totalElementos, alturaTotal }) => {
   );
 });
 
-export default function DetalleUnidad({ unidad, onVolver, onSelectLeccion }) {
+export default function DetalleUnidad({ unidad, usuarioId, onVolver, onSelectLeccion }) {
   const [lecciones, setLecciones] = useState([]);
+  const [leccionesCompletadasIds, setLeccionesCompletadasIds] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [hoveredLeccion, setHoveredLeccion] = useState(null);
+  const [leccionActivaModal, setLeccionActivaModal] = useState(null);
 
   const particlesInit = useCallback(async (engine) => {
     await loadSlim(engine);
@@ -88,59 +91,68 @@ export default function DetalleUnidad({ unidad, onVolver, onSelectLeccion }) {
     if (!unidad) return;
     setCargando(true);
     
-    if (unidad.lecciones && Array.isArray(unidad.lecciones) && unidad.lecciones.length > 0) {
-      setLecciones(unidad.lecciones);
-      setCargando(false);
-    } else {
-      fetch(`${API_BASE_URL}/lecciones/?unidad=${unidad.id}`)
-        .then(res => res.json())
-        .then(data => {
-          const lista = Array.isArray(data) ? data : (data.results || []);
-          setLecciones(lista.length > 0 ? lista : [
-            { id: 1001, orden: 1, nombre: 'Fundamentos de Acometidas', descripcion: 'Análisis de vulnerabilidades y empalmes domiciliarios SEC.' },
-            { id: 1002, orden: 2, nombre: 'Empalmes Monofásicos', descripcion: 'Configuración de protecciones y medidores de energía.' },
-            { id: 1003, orden: 3, nombre: 'Protecciones y Cortes', descripcion: 'Protocolos normativos sobre tableros generales.' }
-          ]);
-          setCargando(false);
-        })
-        .catch(() => {
-          setLecciones([
-            { id: 1001, orden: 1, nombre: 'Fundamentos de Acometidas', descripcion: 'Análisis de vulnerabilidades y empalmes domiciliarios SEC.' },
-            { id: 1002, orden: 2, nombre: 'Empalmes Monofásicos', descripcion: 'Configuración de protecciones y medidores de energía.' },
-            { id: 1003, orden: 3, nombre: 'Protecciones y Cortes', descripcion: 'Protocolos normativos sobre tableros generales.' }
-          ]);
-          setCargando(false);
-        });
-    }
+    fetch(`${API_BASE_URL}/lecciones/?unidad=${unidad.id}`)
+      .then(res => res.json())
+      .then(data => {
+        const lista = Array.isArray(data) ? data : (data.results || []);
+        const filtradas = lista
+          .filter(l => l.unidad === unidad.id || !l.unidad)
+          .sort((a, b) => (a.numero_leccion || a.orden || 0) - (b.numero_leccion || b.orden || 0));
+
+        const finales = filtradas.length > 0 ? filtradas : [
+          { id: 1001, numero_leccion: 1, nombre: 'Fundamentos de Acometidas', descripcion: 'Análisis de vulnerabilidades y empalmes domiciliarios SEC.' },
+          { id: 1002, numero_leccion: 2, nombre: 'Empalmes Monofásicos', descripcion: 'Configuración de protecciones y medidores de energía.' },
+          { id: 1003, numero_leccion: 3, nombre: 'Protecciones y Cortes', descripcion: 'Protocolos normativos sobre tableros generales.' }
+        ];
+        setLecciones(finales);
+        if (finales.length > 0) {
+          setLeccionesCompletadasIds([finales[0].id]);
+        }
+        setCargando(false);
+      })
+      .catch(() => {
+        const respaldo = [
+          { id: 1001, numero_leccion: 1, nombre: 'Fundamentos de Acometidas', descripcion: 'Análisis de vulnerabilidades y empalmes domiciliarios SEC.' },
+          { id: 1002, numero_leccion: 2, nombre: 'Empalmes Monofásicos', descripcion: 'Configuración de protecciones y medidores de energía.' },
+          { id: 1003, numero_leccion: 3, nombre: 'Protecciones y Cortes', descripcion: 'Protocolos normativos sobre tableros generales.' }
+        ];
+        setLecciones(respaldo);
+        setLeccionesCompletadasIds([1001]);
+        setCargando(false);
+      });
   }, [unidad]);
 
+  const handleMarcarCompletada = (leccionCompletada) => {
+    setLeccionesCompletadasIds(prev =>
+      prev.includes(leccionCompletada.id) ? prev : [...prev, leccionCompletada.id]
+    );
+    if (onSelectLeccion) onSelectLeccion(leccionCompletada);
+  };
+
   const alturaTotal = Math.max(540, lecciones.length * PASO_Y + 120);
-  const retosCompletados = 1; // Progreso simulado o dinámico
+  const retosCompletados = leccionesCompletadasIds.length;
   const porcentajeProgreso = lecciones.length > 0 ? Math.round((retosCompletados / lecciones.length) * 100) : 0;
 
   return (
     <div className="relative min-h-screen text-white font-mono flex flex-col justify-between selection:bg-[#ffb800] selection:text-slate-950 overflow-x-hidden">
       
-      {/* Fondo con Textura wall_mapa.jpeg y overlay oscuro eléctrico */}
+      {/* Fondo con Textura wall_mapa.jpeg */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none z-0 filter brightness-50 contrast-125"
         style={{ backgroundImage: `url(${wallMapa})` }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-[#060913]/90 via-[#0b0f19]/85 to-[#060913]/95 pointer-events-none z-0" />
 
-      {/* Partículas Eléctricas */}
       <Particles id="tsparticles-htb" init={particlesInit} options={particlesOptions} className="absolute inset-0 pointer-events-none z-1" />
-
-      {/* Grid estilo Terminal / HTB */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffb80008_1px,transparent_1px),linear-gradient(to_bottom,#ffb80008_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none z-1" />
 
-      {/* Header estilo Terminal Prompt con Barra de Progreso */}
+      {/* Header Estilo Terminal Prompt con Barra de Progreso */}
       <header className="sticky top-3 z-30 mx-auto w-[95%] max-w-3xl bg-[#0d1322]/95 border border-[#ffb800]/40 rounded-xl px-4 py-3 shadow-[0_0_30px_rgba(255,184,0,0.2)] backdrop-blur-xl">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
             <button 
               onClick={onVolver} 
-              className="bg-[#141d30] hover:bg-[#ffb800] text-[#ffb800] hover:text-slate-950 border border-[#ffb800]/50 px-3 py-1 rounded-lg text-xs font-bold transition active:scale-95 flex items-center gap-1.5 shadow-[0_0_10px_rgba(255,184,0,0.3)] cursor-pointer"
+              className="bg-[#141d30] hover:bg-[#ffb800] text-[#ffb800] hover:text-slate-950 border border-[#ffb800]/50 px-3 py-1 rounded-lg text-xs font-bold transition active:scale-95 flex items-center gap-1.5 cursor-pointer shadow-md"
             >
               <span>◄</span> cd ..
             </button>
@@ -155,6 +167,16 @@ export default function DetalleUnidad({ unidad, onVolver, onSelectLeccion }) {
           </div>
 
           <div className="flex items-center gap-2 text-[11px]">
+            {unidad?.pdf_url && (
+              <a
+                href={unidad.pdf_url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[#9fef00] bg-[#112614] border border-[#9fef00]/40 px-2.5 py-1 rounded-md hover:bg-[#9fef00] hover:text-slate-950 transition font-bold"
+              >
+                📄 PLIEGO_PDF
+              </a>
+            )}
             <div className="flex items-center gap-1 text-[#ffb800] bg-[#261f0c] border border-[#ffb800]/40 px-2.5 py-1 rounded-md shadow-inner">
               <span className="w-1.5 h-1.5 rounded-full bg-[#ffb800] animate-ping" />
               <span>HIGH_VOLTAGE</span>
@@ -182,14 +204,14 @@ export default function DetalleUnidad({ unidad, onVolver, onSelectLeccion }) {
             <span className="font-bold uppercase tracking-widest flex items-center gap-1">
               <span>⚡</span> TARGET // {hoveredLeccion.nombre}
             </span>
-            <span className="bg-[#ffb800]/20 px-2 py-0.5 rounded text-[9px] text-[#ffb800]">VOLTAGE: 220V</span>
+            <span className="bg-[#ffb800]/20 px-2 py-0.5 rounded text-[9px] text-[#ffb800]">220V / 380V</span>
           </div>
           <p className="text-[11px] text-slate-300 leading-relaxed font-sans">
             {hoveredLeccion.descripcion || 'Análisis técnico y cumplimiento de normativas eléctricas vigentes.'}
           </p>
           <div className="mt-3 pt-2 border-t border-slate-800 flex justify-between text-[9px] text-slate-400">
             <span>REWARD: 100 XP</span>
-            <span className="text-[#9fef00]">[FLAG READY]</span>
+            <span className="text-[#9fef00]">[CLICK TO SPAWN]</span>
           </div>
         </aside>
       )}
@@ -208,8 +230,8 @@ export default function DetalleUnidad({ unidad, onVolver, onSelectLeccion }) {
             {lecciones.map((leccion, idx) => {
               const xPos = getXPercentage(idx);
               const yPos = 55 + idx * PASO_Y;
-              const completado = idx < 1;
-              const activo = idx === 1;
+              const completado = leccionesCompletadasIds.includes(leccion.id);
+              const activo = !completado && (idx === 0 || leccionesCompletadasIds.includes(lecciones[idx - 1]?.id));
               const isHovered = hoveredLeccion?.id === leccion.id;
 
               return (
@@ -219,7 +241,7 @@ export default function DetalleUnidad({ unidad, onVolver, onSelectLeccion }) {
                   className="absolute z-10 flex flex-col items-center group cursor-pointer"
                   onMouseEnter={() => setHoveredLeccion(leccion)}
                   onMouseLeave={() => setHoveredLeccion(null)}
-                  onClick={() => onSelectLeccion && onSelectLeccion(leccion)}
+                  onClick={() => setLeccionActivaModal(leccion)}
                 >
                   {activo && (
                     <div className="absolute -top-11 flex flex-col items-center animate-bounce z-20">
@@ -244,19 +266,18 @@ export default function DetalleUnidad({ unidad, onVolver, onSelectLeccion }) {
                       }`}
                     />
 
-                    {/* Nodo Estilo Tarjeta / Box de CTF con acento amarillo eléctrico */}
                     <div className={`relative w-20 h-20 rounded-xl flex flex-col items-center justify-center transition-all duration-150 active:translate-y-1 border-2 ${
                       completado 
                         ? 'bg-[#0e2216] border-[#9fef00] shadow-[0_5px_0_#3f6212,0_0_15px_rgba(159,239,0,0.3)] text-[#9fef00]' 
                         : activo 
                         ? 'bg-[#261f0c] border-[#ffb800] shadow-[0_5px_0_#b45309,0_0_20px_rgba(255,184,0,0.5)] text-[#ffb800] scale-105' 
-                        : 'bg-[#0f1420] border-[#22304a] shadow-[0_4px_0_#090d16] text-slate-500'
+                        : 'bg-[#0f1420] border-[#22304a] shadow-[0_4px_0_#090d16] text-slate-400 hover:border-[#ffb800]/50'
                     }`}>
                       <span className="text-xl filter drop-shadow">
                         {completado ? '✔' : activo ? '⚡' : '🔒'}
                       </span>
                       <span className="text-[9px] font-bold tracking-wider mt-1 opacity-90">
-                        CH-{String(leccion.orden || idx + 1).padStart(2, '0')}
+                        CH-{String(leccion.numero_leccion || leccion.orden || idx + 1).padStart(2, '0')}
                       </span>
                     </div>
                   </div>
@@ -273,8 +294,19 @@ export default function DetalleUnidad({ unidad, onVolver, onSelectLeccion }) {
         )}
       </main>
 
+      {/* Modal Independiente de Lección y Preguntas */}
+      {leccionActivaModal && (
+        <LeccionModal
+          unidad={unidad}
+          leccion={leccionActivaModal}
+          usuarioId={usuarioId}
+          onClose={() => setLeccionActivaModal(null)}
+          onCompletar={handleMarcarCompletada}
+        />
+      )}
+
       {/* Footer Estilo CLI Status */}
-      <footer className="sticky bottom-0 w-full bg-[#060913]/95 border-t border-[#1f293d] px-4 py-2.5 z-30 flex items-center justify-between backdrop-blur-md text-[10px] z-10">
+      <footer className="sticky bottom-0 w-full bg-[#060913]/95 border-t border-[#1f293d] px-4 py-2.5 z-30 flex items-center justify-between backdrop-blur-md text-[10px]">
         <div className="flex items-center gap-2">
           <span className="text-[#ffb800]">root@tiuque-tec:~$</span>
           <span className="text-slate-400 animate-pulse">high_voltage_grid [SEC_RIC_ACTIVE]</span>
