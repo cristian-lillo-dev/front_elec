@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import logoImg from './assets/logo_s.png';
 import DetalleUnidad from './DetalleUnidad';
+import CalculadoraAlimentadores from './CalculadoraAlimentadores';
 
 const API_BASE_URL = 'https://backelec1-production.up.railway.app/api';
 
@@ -65,7 +66,12 @@ export default function Dashboard({ user, onLogout }) {
 
   const nombreUsuario = user?.username || user?.name || "Operador";
 
-  // Si el usuario seleccionó una unidad, mostramos el componente independiente de DetalleUnidad (Mapa estilo Duolingo con temática Hacker)
+  // Si el usuario seleccionó la Calculadora de Alimentadores
+  if (calculadoraActiva === 'alimentadores') {
+    return <CalculadoraAlimentadores onVolver={() => setCalculadoraActiva(null)} />;
+  }
+
+  // Si el usuario seleccionó una unidad, mostramos el mapa de lecciones
   if (unidadSeleccionada) {
     return (
       <DetalleUnidad 
@@ -191,18 +197,6 @@ export default function Dashboard({ user, onLogout }) {
                         </span>
                         <span className="text-[#ffb800] font-bold text-xs">⚡</span>
                       </div>
-
-                      {hoveredTema?.id === tema.id && !estaExpandido && (
-                        <div className="absolute inset-x-0 -top-2 bg-[#050914] border-2 border-[#ffb800]/80 p-4 rounded-2xl text-xs text-slate-200 z-30 shadow-[0_10px_30px_rgba(0,0,0,0.8)] backdrop-blur-md">
-                          <div className="flex items-center justify-between border-b border-[#ffb800]/30 pb-1 mb-2 text-[10px] text-[#ffb800]">
-                            <span>SYS_INFO // DESCRIPCIÓN</span>
-                            <span>SEC</span>
-                          </div>
-                          <p className="font-sans leading-relaxed text-[11px] text-slate-300">
-                            {tema.descripcion || 'Estudio y aplicación de exigencias normativas vigentes.'}
-                          </p>
-                        </div>
-                      )}
                     </div>
 
                     {estaExpandido && (
@@ -266,11 +260,28 @@ export default function Dashboard({ user, onLogout }) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Tarjeta interactiva conectada a la Calculadora de Alimentadores */}
+            <div className="bg-[#0a1120] border-2 border-[#ffb800] hover:border-[#9fef00] p-5 rounded-2xl flex flex-col justify-between transition group shadow-[0_0_15px_rgba(255,184,0,0.15)]">
+              <div>
+                <span className="text-[9px] bg-[#261f0c] text-[#ffb800] px-2 py-0.5 rounded border border-[#ffb800]/40 uppercase">RIC N°03 / 04</span>
+                <h4 className="font-bold text-xs text-white group-hover:text-[#ffb800] uppercase tracking-wide mt-2 mb-1">
+                  Dimensionamiento Alimentadores
+                </h4>
+                <p className="text-[11px] text-slate-400 leading-normal">Cálculo de sección y caída de tensión reglamentaria.</p>
+              </div>
+              <button 
+                onClick={() => setCalculadoraActiva('alimentadores')} 
+                className="mt-5 w-full py-2 bg-[#ffb800] hover:bg-[#e0a100] text-slate-950 text-[11px] font-bold rounded-lg transition uppercase tracking-wider cursor-pointer shadow-md"
+              >
+                ABRIR HERRAMIENTA ⚡
+              </button>
+            </div>
+
+            {/* Otras utilidades de respaldo */}
             {[
               { id: 'awg', title: 'Convertidor AWG', desc: 'Calibre AWG a mm² y corriente admisible.' },
               { id: 'corrientes', title: 'Tabla de Corrientes', desc: 'Capacidad de transporte según canalización.' },
-              { id: 'ruptura', title: 'Capacidad de Ruptura', desc: 'Interruptores termomagnéticos y curvas.' },
-              { id: 'colores', title: 'Código de Colores', desc: 'Identificación de fases y resistencias.' }
+              { id: 'ruptura', title: 'Capacidad de Ruptura', desc: 'Interruptores termomagnéticos y curvas.' }
             ].map((tool) => (
               <div key={tool.id} className="bg-[#0a1120] border border-[#9fef00]/30 hover:border-[#ffb800]/60 p-5 rounded-2xl flex flex-col justify-between transition group">
                 <div>
@@ -280,7 +291,7 @@ export default function Dashboard({ user, onLogout }) {
                   <p className="text-[11px] text-slate-400 leading-normal">{tool.desc}</p>
                 </div>
                 <button 
-                  onClick={() => setCalculadoraActiva(tool.id)} 
+                  onClick={() => alert(`Módulo ${tool.title} en desarrollo.`)} 
                   className="mt-5 w-full py-2 bg-[#0d162c] hover:bg-[#ffb800] text-[#ffb800] hover:text-slate-950 text-[11px] font-bold rounded-lg border border-[#ffb800]/40 transition uppercase tracking-wider cursor-pointer"
                 >
                   ABRIR UTILIDAD ⚡
@@ -289,29 +300,6 @@ export default function Dashboard({ user, onLogout }) {
             ))}
           </div>
         </div>
-
-        {calculadoraActiva && (
-          <div className="fixed inset-0 z-50 bg-[#050914]/90 backdrop-blur-md flex items-center justify-center p-4">
-            <div className="bg-[#0a1120] border-2 border-[#9fef00] rounded-3xl p-6 max-w-md w-full relative shadow-[0_0_50px_rgba(159,239,0,0.2)]">
-              <button 
-                onClick={() => setCalculadoraActiva(null)} 
-                className="absolute top-4 right-4 text-slate-400 hover:text-white text-xs bg-[#0d162c] border border-slate-700 px-2.5 py-1 rounded-lg cursor-pointer"
-              >
-                ✕
-              </button>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="w-2 h-2 rounded-full bg-[#9fef00] animate-ping" />
-                <h3 className="text-xs font-bold text-[#9fef00] uppercase tracking-widest">
-                  UTILIDAD // {calculadoraActiva}
-                </h3>
-              </div>
-              <p className="text-xs text-slate-300 mb-4 font-sans">Módulo de cálculo activo conforme a especificaciones oficiales SEC.</p>
-              <div className="p-4 bg-[#050914] rounded-xl text-center text-xs text-[#ffb800] border border-[#9fef00]/30 shadow-inner">
-                [OUTPUT: 16A - SECCIÓN NOMINAL 2.5 mm²]
-              </div>
-            </div>
-          </div>
-        )}
       </main>
 
       <footer className="bg-[#050914] border-t border-[#9fef00]/30 py-4 px-6 text-center text-[10px] text-slate-400 z-10 flex justify-between items-center max-w-7xl mx-auto w-full">
