@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import wallMapa from './assets/wall_mapa.jpeg';
 
 const API_BASE_URL = 'https://backelec1-production.up.railway.app/api';
 
@@ -154,8 +155,12 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
   if (cargando) {
     return (
       <div className="fixed inset-0 z-50 bg-[#050914]/95 backdrop-blur-md flex flex-col items-center justify-center font-mono text-[#ffb800] gap-3">
-        <div className="w-9 h-9 border-2 border-[#ffb800] border-t-transparent rounded-full animate-spin" />
-        <span className="text-xs tracking-widest animate-pulse">[SPAWNING_NODE // DESCARGANDO PAQUETES SEC...]</span>
+        <div 
+          className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none z-0 opacity-35 filter brightness-50 contrast-125"
+          style={{ backgroundImage: `url(${wallMapa})` }}
+        />
+        <div className="w-9 h-9 border-2 border-[#ffb800] border-t-transparent rounded-full animate-spin relative z-10" />
+        <span className="text-xs tracking-widest animate-pulse relative z-10">[SPAWNING_NODE // DESCARGANDO PAQUETES SEC...]</span>
       </div>
     );
   }
@@ -174,7 +179,15 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
 
   return (
     <div className="fixed inset-0 z-50 bg-[#050914]/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 sm:p-6 overflow-y-auto select-none font-mono">
-      <div className="w-full max-w-2xl my-auto flex flex-col gap-4">
+      
+      {/* Fondo con wall_mapa.jpeg */}
+      <div 
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none z-0 opacity-35 filter brightness-50 contrast-125"
+        style={{ backgroundImage: `url(${wallMapa})` }}
+      />
+      <div className="fixed inset-0 bg-gradient-to-b from-[#050914]/90 via-[#050914]/85 to-[#050914]/95 pointer-events-none z-0" />
+
+      <div className="w-full max-w-2xl my-auto flex flex-col gap-4 relative z-10">
         
         {/* HUD Superior del Modal */}
         <div className="w-full bg-[#0a1120] border border-[#ffb800]/40 rounded-xl p-3 flex items-center justify-between gap-4 shadow-[0_0_25px_rgba(0,0,0,0.8)]">
