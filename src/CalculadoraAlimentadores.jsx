@@ -127,34 +127,34 @@ export default function CalculadoraAlimentadores({ onVolver }) {
           
           {/* Entradas */}
           <div className="lg:col-span-5 space-y-6">
-            <div className="bg-[#0a1120] border border-[#9fef00]/30 rounded-2xl p-5 shadow-xl space-y-4">
+            <div className="bg-[#0a1120] border-2 border-[#9fef00]/40 rounded-2xl p-5 shadow-xl space-y-4">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 className="text-xs font-bold text-[#9fef00] uppercase tracking-wider flex items-center gap-2">
-                  <span>⚙️</span> Parámetros del Proyecto
+                  <span>⚙️</span> Parámetros de Entrada (Editable)
                 </h3>
-                <span className="text-[10px] bg-[#112614] border border-[#9fef00]/40 px-2 py-0.5 rounded text-[#9fef00]">ENTRADAS</span>
+                <span className="text-[10px] bg-[#112614] border border-[#9fef00]/50 px-2 py-0.5 rounded text-[#9fef00] font-bold">CAMPOS VERDES</span>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-2">Plantillas Rápidas:</label>
                 <div className="grid grid-cols-3 gap-2">
-                  <button type="button" onClick={() => cargarEjemplo(90, 5500, 220, 0.93, 3, '1F')} className="bg-[#050914] hover:bg-[#112614] border border-[#9fef00]/30 text-slate-300 text-xs py-1.5 px-2 rounded-lg transition cursor-pointer">90m - 5.5kW</button>
-                  <button type="button" onClick={() => cargarEjemplo(100, 5500, 220, 1.0, 3, '1F', 25)} className="bg-[#050914] hover:bg-[#112614] border border-[#9fef00]/30 text-slate-300 text-xs py-1.5 px-2 rounded-lg transition cursor-pointer">100m - 25A</button>
-                  <button type="button" onClick={() => cargarEjemplo(60, 15000, 380, 0.90, 3, '3F')} className="bg-[#050914] hover:bg-[#112614] border border-[#9fef00]/30 text-slate-300 text-xs py-1.5 px-2 rounded-lg transition cursor-pointer">3F - 15kW</button>
+                  <button type="button" onClick={() => cargarEjemplo(90, 5500, 220, 0.93, 3, '1F')} className="bg-[#07130b] hover:bg-[#112614] border border-[#9fef00]/40 text-[#9fef00] text-xs py-1.5 px-2 rounded-lg transition cursor-pointer font-bold">90m - 5.5kW</button>
+                  <button type="button" onClick={() => cargarEjemplo(100, 5500, 220, 1.0, 3, '1F', 25)} className="bg-[#07130b] hover:bg-[#112614] border border-[#9fef00]/40 text-[#9fef00] text-xs py-1.5 px-2 rounded-lg transition cursor-pointer font-bold">100m - 25A</button>
+                  <button type="button" onClick={() => cargarEjemplo(60, 15000, 380, 0.90, 3, '3F')} className="bg-[#07130b] hover:bg-[#112614] border border-[#9fef00]/40 text-[#9fef00] text-xs py-1.5 px-2 rounded-lg transition cursor-pointer font-bold">3F - 15kW</button>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Sistema</label>
-                  <select value={systemType} onChange={handleSystemChange} className="w-full text-xs rounded-lg p-2.5 border border-slate-700 bg-[#050914] text-white focus:border-[#9fef00] outline-none">
+                  <label className="block text-xs font-semibold text-[#9fef00] mb-1">Sistema</label>
+                  <select value={systemType} onChange={handleSystemChange} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] focus:ring-2 focus:ring-[#9fef00]/30 outline-none transition cursor-pointer">
                     <option value="1F">Monofásico (1F)</option>
                     <option value="3F">Trifásico (3F)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Material Conductor</label>
-                  <select value={material} onChange={(e) => setMaterial(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border border-slate-700 bg-[#050914] text-white focus:border-[#9fef00] outline-none">
+                  <label className="block text-xs font-semibold text-[#9fef00] mb-1">Material Conductor</label>
+                  <select value={material} onChange={(e) => setMaterial(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] focus:ring-2 focus:ring-[#9fef00]/30 outline-none transition cursor-pointer">
                     <option value="0.018">Cobre (ρ = 0,018)</option>
                     <option value="0.028">Aluminio (ρ = 0,028)</option>
                   </select>
@@ -163,34 +163,34 @@ export default function CalculadoraAlimentadores({ onVolver }) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Tensión Nominal (V)</label>
-                  <input type="number" value={voltage} onChange={(e) => setVoltage(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border border-slate-700 bg-[#050914] text-white focus:border-[#9fef00] outline-none" />
+                  <label className="block text-xs font-semibold text-[#9fef00] mb-1">Tensión Nominal (V)</label>
+                  <input type="number" value={voltage} onChange={(e) => setVoltage(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] focus:ring-2 focus:ring-[#9fef00]/30 outline-none transition" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Longitud L (m)</label>
-                  <input type="number" value={distance} onChange={(e) => setDistance(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border border-slate-700 bg-[#050914] text-white focus:border-[#9fef00] outline-none" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Potencia Activa (W)</label>
-                  <input type="number" value={power} onChange={(e) => handlePowerChange(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border border-slate-700 bg-[#050914] text-white focus:border-[#9fef00] outline-none" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Factor Potencia (cos φ)</label>
-                  <input type="number" step="0.01" value={cosPhi} onChange={(e) => setCosPhi(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border border-slate-700 bg-[#050914] text-white focus:border-[#9fef00] outline-none" />
+                  <label className="block text-xs font-semibold text-[#9fef00] mb-1">Longitud L (m)</label>
+                  <input type="number" value={distance} onChange={(e) => setDistance(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] focus:ring-2 focus:ring-[#9fef00]/30 outline-none transition" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Corriente de Carga (A)</label>
-                  <input type="number" step="0.01" value={current} onChange={(e) => handleCurrentChange(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border border-slate-700 bg-[#050914] text-white focus:border-[#9fef00] outline-none" />
+                  <label className="block text-xs font-semibold text-[#9fef00] mb-1">Potencia Activa (W)</label>
+                  <input type="number" value={power} onChange={(e) => handlePowerChange(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] focus:ring-2 focus:ring-[#9fef00]/30 outline-none transition" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Caída Máx. (%ΔV)</label>
-                  <input type="number" step="0.1" value={maxVdrop} onChange={(e) => setMaxVdrop(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border border-slate-700 bg-[#050914] text-white focus:border-[#9fef00] outline-none" />
+                  <label className="block text-xs font-semibold text-[#9fef00] mb-1">Factor Potencia (cos φ)</label>
+                  <input type="number" step="0.01" value={cosPhi} onChange={(e) => setCosPhi(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] focus:ring-2 focus:ring-[#9fef00]/30 outline-none transition" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[#9fef00] mb-1">Corriente de Carga (A)</label>
+                  <input type="number" step="0.01" value={current} onChange={(e) => handleCurrentChange(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] focus:ring-2 focus:ring-[#9fef00]/30 outline-none transition" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#9fef00] mb-1">Caída Máx. (%ΔV)</label>
+                  <input type="number" step="0.1" value={maxVdrop} onChange={(e) => setMaxVdrop(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] focus:ring-2 focus:ring-[#9fef00]/30 outline-none transition" />
                 </div>
               </div>
             </div>
