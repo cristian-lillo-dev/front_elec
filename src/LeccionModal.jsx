@@ -413,4 +413,4 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
       </div>
     </div>
   );
-}
+} 
