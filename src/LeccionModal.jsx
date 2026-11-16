@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import Particles from '@tsparticles/react';
 import { loadSlim } from '@tsparticles/slim';
-import wallMapa from './assets/wall_mapa.jpg';
+import wallMapa from './assets/wall_mapa.jpeg';
 import LeccionModal from './LeccionModal';
 
 const API_BASE_URL = 'https://backelec1-production.up.railway.app/api';
