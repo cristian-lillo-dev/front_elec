@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import logoImg from './assets/logo_s.png';
 import DetalleUnidad from './DetalleUnidad';
 import CalculadoraAlimentadores from './CalculadoraAlimentadores';
+import { sfx } from './soundEffects';
 
 const API_BASE_URL = 'https://backelec1-production.up.railway.app/api';
 
@@ -16,6 +17,7 @@ export default function Dashboard({ user, onLogout }) {
   
   const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
   const [leccionActiva, setLeccionActiva] = useState(null);
+  const [sonidoMuteado, setSonidoMuteado] = useState(sfx.isMuted());
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/temas/?ordering=orden`)
@@ -36,11 +38,18 @@ export default function Dashboard({ user, onLogout }) {
       });
   }, []);
 
+  const handleToggleMute = () => {
+    const nuevoEstado = sfx.toggleMute();
+    setSonidoMuteado(nuevoEstado);
+  };
+
   const handleToggleTema = async (tema) => {
     if (temaExpandido === tema.id) {
+      sfx.playClick();
       setTemaExpandido(null);
       return;
     }
+    sfx.playOpenNode();
     setTemaExpandido(tema.id);
 
     if (!unidadesMap[tema.id]) {
@@ -50,7 +59,6 @@ export default function Dashboard({ user, onLogout }) {
         const data = await res.json();
         const lista = Array.isArray(data) ? data : (data.results || []);
 
-        // Filtrado estricto en frontend para mostrar SOLO las unidades que pertenecen a este tema
         const unidadesFiltradas = lista
           .filter(u => {
             const temaIdUnidad = typeof u.tema === 'object' && u.tema !== null 
@@ -76,7 +84,6 @@ export default function Dashboard({ user, onLogout }) {
     }
   };
 
-  // Nombre visible del usuario autenticado
   const nombreUsuario =
     [user?.first_name, user?.last_name].filter(Boolean).join(' ') ||
     user?.name ||
@@ -84,11 +91,13 @@ export default function Dashboard({ user, onLogout }) {
     'Operador SEC';
 
   const handleIrPanel = () => {
+    sfx.playClick();
     setCalculadoraActiva(null);
     setUnidadSeleccionada(null);
   };
 
   const handleIrCalculadora = () => {
+    sfx.playOpenNode();
     setUnidadSeleccionada(null);
     setCalculadoraActiva('alimentadores');
   };
@@ -125,7 +134,7 @@ export default function Dashboard({ user, onLogout }) {
       {/* Grid Técnico de Fondo Verde Hacker / Oscuro */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#9fef0008_1px,transparent_1px),linear-gradient(to_bottom,#9fef0008_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
-      {/* Header Estilo HUD con Menú Global y Nombre del Usuario */}
+      {/* Header Estilo HUD con Menú Global, Audio y Nombre del Usuario */}
       <header className="sticky top-0 z-50 bg-[#080d1a]/95 backdrop-blur-xl border-b border-[#9fef00]/30 px-6 py-3.5 shadow-[0_0_20px_rgba(159,239,0,0.1)]">
         <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
           <div className="flex items-center space-x-6">
@@ -142,12 +151,14 @@ export default function Dashboard({ user, onLogout }) {
             {/* Menú Global Persistente */}
             <nav className="hidden md:flex items-center space-x-2 text-xs">
               <button
+                onMouseEnter={() => sfx.playHover()}
                 onClick={handleIrPanel}
                 className="px-3.5 py-1.5 rounded-xl font-bold bg-[#112614] text-[#9fef00] border border-[#9fef00]/50 shadow-[0_0_12px_rgba(159,239,0,0.15)] cursor-pointer"
               >
                 ⚡ PANEL DE ESTUDIO
               </button>
               <button
+                onMouseEnter={() => sfx.playHover()}
                 onClick={handleIrCalculadora}
                 className="px-3.5 py-1.5 rounded-xl font-bold text-slate-300 hover:text-[#ffb800] bg-[#0d1527]/70 hover:bg-[#0d1527] border border-slate-800 hover:border-[#ffb800]/40 transition cursor-pointer"
               >
@@ -157,6 +168,20 @@ export default function Dashboard({ user, onLogout }) {
           </div>
 
           <div className="flex items-center space-x-2.5">
+            {/* Botón de Sonido Activo / Mute */}
+            <button
+              onClick={handleToggleMute}
+              title={sonidoMuteado ? 'Activar efectos de sonido' : 'Silenciar efectos de sonido'}
+              className={`px-2.5 py-1 rounded-lg border text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                sonidoMuteado
+                  ? 'bg-[#0d1527] border-slate-700 text-slate-400 hover:text-white'
+                  : 'bg-[#112614] border-[#9fef00]/40 text-[#9fef00]'
+              }`}
+            >
+              <span>{sonidoMuteado ? '🔇' : '🔊'}</span>
+              <span className="hidden sm:inline text-[10px]">{sonidoMuteado ? 'MUTE' : 'SFX'}</span>
+            </button>
+
             {/* Badge del Usuario Conectado */}
             <div className="flex items-center space-x-2 bg-[#0d1527] border border-[#ffb800]/40 px-3 py-1 rounded-lg text-xs text-white shadow-inner">
               <span className="w-2 h-2 rounded-full bg-[#9fef00]" />
@@ -177,7 +202,11 @@ export default function Dashboard({ user, onLogout }) {
               <span>5 HP</span>
             </div>
             <button 
-              onClick={onLogout}
+              onMouseEnter={() => sfx.playHover()}
+              onClick={() => {
+                sfx.playClick();
+                onLogout();
+              }}
               className="px-3 h-8 rounded-xl bg-[#0d1527] hover:bg-rose-950/60 border border-slate-700 hover:border-rose-500/60 flex items-center justify-center text-slate-300 hover:text-rose-400 text-xs font-bold transition-all cursor-pointer"
               title="Cerrar Sesión"
             >
@@ -237,7 +266,10 @@ export default function Dashboard({ user, onLogout }) {
                 return (
                   <div key={tema.id || idx} className="flex flex-col">
                     <div 
-                      onMouseEnter={() => setHoveredTema(tema)}
+                      onMouseEnter={() => {
+                        setHoveredTema(tema);
+                        sfx.playHover();
+                      }}
                       onMouseLeave={() => setHoveredTema(null)}
                       onClick={() => handleToggleTema(tema)}
                       className={`bg-[#0a1120] border rounded-2xl p-6 shadow-xl transition-all cursor-pointer relative group flex flex-col justify-between overflow-hidden ${
@@ -282,8 +314,10 @@ export default function Dashboard({ user, onLogout }) {
                           unidadesDelTema.map((unidad, uIdx) => (
                             <div
                               key={unidad.id || uIdx}
+                              onMouseEnter={() => sfx.playHover()}
                               onClick={(e) => {
                                 e.stopPropagation();
+                                sfx.playOpenNode();
                                 setUnidadSeleccionada(unidad);
                               }}
                               className="bg-[#0a1120] hover:bg-[#101c33] border border-[#9fef00]/30 hover:border-[#9fef00] p-3 rounded-xl flex items-center justify-between cursor-pointer transition group"
@@ -324,7 +358,10 @@ export default function Dashboard({ user, onLogout }) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-[#0a1120] border-2 border-[#ffb800] hover:border-[#9fef00] p-5 rounded-2xl flex flex-col justify-between transition group shadow-[0_0_15px_rgba(255,184,0,0.15)]">
+            <div 
+              onMouseEnter={() => sfx.playHover()}
+              className="bg-[#0a1120] border-2 border-[#ffb800] hover:border-[#9fef00] p-5 rounded-2xl flex flex-col justify-between transition group shadow-[0_0_15px_rgba(255,184,0,0.15)]"
+            >
               <div>
                 <span className="text-[9px] bg-[#261f0c] text-[#ffb800] px-2 py-0.5 rounded border border-[#ffb800]/40 uppercase font-bold">
                   RIC N°03 / 04
@@ -349,7 +386,11 @@ export default function Dashboard({ user, onLogout }) {
               { id: 'corrientes', title: 'Tabla de Corrientes', desc: 'Capacidad de transporte según canalización.' },
               { id: 'ruptura', title: 'Capacidad de Ruptura', desc: 'Interruptores termomagnéticos y curvas.' }
             ].map((tool) => (
-              <div key={tool.id} className="bg-[#0a1120] border border-[#9fef00]/30 hover:border-[#ffb800]/60 p-5 rounded-2xl flex flex-col justify-between transition group">
+              <div 
+                key={tool.id} 
+                onMouseEnter={() => sfx.playHover()}
+                className="bg-[#0a1120] border border-[#9fef00]/30 hover:border-[#ffb800]/60 p-5 rounded-2xl flex flex-col justify-between transition group"
+              >
                 <div>
                   <h4 className="font-bold text-xs text-[#9fef00] group-hover:text-[#ffb800] uppercase tracking-wide mb-1">
                     {tool.title}
@@ -357,7 +398,10 @@ export default function Dashboard({ user, onLogout }) {
                   <p className="text-[11px] text-slate-400 leading-normal font-sans">{tool.desc}</p>
                 </div>
                 <button 
-                  onClick={() => alert(`Módulo ${tool.title} en desarrollo.`)} 
+                  onClick={() => {
+                    sfx.playClick();
+                    alert(`Módulo ${tool.title} en desarrollo.`);
+                  }} 
                   className="mt-5 w-full py-2 bg-[#0d162c] hover:bg-[#ffb800] text-[#ffb800] hover:text-slate-950 text-[11px] font-bold rounded-lg border border-[#ffb800]/40 transition uppercase tracking-wider cursor-pointer"
                 >
                   ABRIR UTILIDAD ⚡

@@ -4,13 +4,13 @@ import { loadSlim } from '@tsparticles/slim';
 import logoImg from './assets/logo_s.png';
 import wallMapa from './assets/wall_mapa.jpeg';
 import LeccionModal from './LeccionModal';
+import { sfx } from './soundEffects';
 
 const API_BASE_URL = 'https://backelec1-production.up.railway.app/api';
 const PASO_Y = 125;
 const PATRON_X = [30, 50, 70, 50];
 const getXPercentage = (index) => PATRON_X[index % PATRON_X.length];
 
-// 1. Conexiones Curvas Orgánicas con Pulso Eléctrico Animado (de mapa_2.jsx adaptado a colores HTB)
 const ConexionesSVG = memo(({ totalElementos, alturaTotal }) => {
   const puntos = useMemo(() => {
     return Array.from({ length: totalElementos }).map((_, i) => ({
@@ -91,7 +91,6 @@ const ConexionesSVG = memo(({ totalElementos, alturaTotal }) => {
   );
 });
 
-// 2. Nodo Gamificado 3D con Aro Giratorio y Resplandor (inspirado en mapa_2.jsx)
 const NodoRuta = memo(({ leccion, idx, completado, activo, isHovered, onHover, onSelect }) => {
   const xPos = getXPercentage(idx);
   const yPos = 55 + idx * PASO_Y;
@@ -105,9 +104,15 @@ const NodoRuta = memo(({ leccion, idx, completado, activo, isHovered, onHover, o
         transform: 'translate(-50%, -50%)',
       }}
       className="absolute z-10 flex flex-col items-center group cursor-pointer"
-      onMouseEnter={() => onHover(leccion)}
+      onMouseEnter={() => {
+        sfx.playHover();
+        onHover(leccion);
+      }}
       onMouseLeave={() => onHover(null)}
-      onClick={() => onSelect(leccion)}
+      onClick={() => {
+        sfx.playOpenNode();
+        onSelect(leccion);
+      }}
     >
       {activo && (
         <div className="absolute -top-12 flex flex-col items-center animate-bounce z-20">
@@ -187,6 +192,7 @@ export default function DetalleUnidad({
   const [cargando, setCargando] = useState(true);
   const [hoveredLeccion, setHoveredLeccion] = useState(null);
   const [leccionActivaModal, setLeccionActivaModal] = useState(null);
+  const [sonidoMuteado, setSonidoMuteado] = useState(sfx.isMuted());
 
   const particlesInit = useCallback(async (engine) => {
     await loadSlim(engine);
@@ -221,7 +227,12 @@ export default function DetalleUnidad({
       .then(data => {
         const lista = Array.isArray(data) ? data : (data.results || []);
         const filtradas = lista
-          .filter(l => l.unidad === unidad.id || !l.unidad)
+          .filter(l => {
+            const unidadIdLeccion = typeof l.unidad === 'object' && l.unidad !== null 
+              ? l.unidad.id 
+              : (l.unidad ?? l.unidad_id);
+            return Number(unidadIdLeccion) === Number(unidad.id);
+          })
           .sort((a, b) => (a.numero_leccion || a.orden || 0) - (b.numero_leccion || b.orden || 0));
 
         const finales = filtradas.length > 0 ? filtradas : [
@@ -246,6 +257,11 @@ export default function DetalleUnidad({
         setCargando(false);
       });
   }, [unidad]);
+
+  const handleToggleMute = () => {
+    const nuevo = sfx.toggleMute();
+    setSonidoMuteado(nuevo);
+  };
 
   const handleMarcarCompletada = (leccionCompletada) => {
     setLeccionesCompletadasIds(prev =>
@@ -287,6 +303,7 @@ export default function DetalleUnidad({
 
             <nav className="hidden md:flex items-center space-x-2 text-xs">
               <button
+                onMouseEnter={() => sfx.playHover()}
                 onClick={onVolver}
                 className="px-3.5 py-1.5 rounded-xl font-bold text-slate-300 hover:text-[#9fef00] bg-[#0d1527]/70 hover:bg-[#0d1527] border border-slate-800 hover:border-[#9fef00]/40 transition cursor-pointer"
               >
@@ -297,6 +314,7 @@ export default function DetalleUnidad({
               </span>
               {onIrCalculadora && (
                 <button
+                  onMouseEnter={() => sfx.playHover()}
                   onClick={onIrCalculadora}
                   className="px-3.5 py-1.5 rounded-xl font-bold text-slate-300 hover:text-[#ffb800] bg-[#0d1527]/70 hover:bg-[#0d1527] border border-slate-800 hover:border-[#ffb800]/40 transition cursor-pointer"
                 >
@@ -307,11 +325,25 @@ export default function DetalleUnidad({
           </div>
 
           <div className="flex items-center space-x-2.5">
+            <button
+              onClick={handleToggleMute}
+              title={sonidoMuteado ? 'Activar efectos de sonido' : 'Silenciar efectos de sonido'}
+              className={`px-2.5 py-1 rounded-lg border text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                sonidoMuteado
+                  ? 'bg-[#0d1527] border-slate-700 text-slate-400 hover:text-white'
+                  : 'bg-[#112614] border-[#9fef00]/40 text-[#9fef00]'
+              }`}
+            >
+              <span>{sonidoMuteado ? '🔇' : '🔊'}</span>
+              <span className="hidden sm:inline text-[10px]">{sonidoMuteado ? 'MUTE' : 'SFX'}</span>
+            </button>
+
             <div className="hidden sm:flex items-center space-x-2 bg-[#0d1527] border border-[#ffb800]/40 px-3 py-1 rounded-lg text-xs">
               <span className="w-2 h-2 rounded-full bg-[#9fef00]" />
               <span className="font-bold text-[#ffb800]">{displayUser}</span>
             </div>
             <button
+              onMouseEnter={() => sfx.playHover()}
               onClick={onVolver}
               className="bg-[#112614] hover:bg-[#9fef00] text-[#9fef00] hover:text-slate-950 border border-[#9fef00]/50 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-md"
             >
@@ -319,7 +351,11 @@ export default function DetalleUnidad({
             </button>
             {onLogout && (
               <button
-                onClick={onLogout}
+                onMouseEnter={() => sfx.playHover()}
+                onClick={() => {
+                  sfx.playClick();
+                  onLogout();
+                }}
                 className="px-3 h-8 rounded-xl bg-[#0d1527] hover:bg-rose-950/60 border border-slate-700 hover:border-rose-500/60 text-slate-300 hover:text-rose-400 text-xs font-bold transition cursor-pointer"
               >
                 SALIR ⌁
@@ -347,6 +383,7 @@ export default function DetalleUnidad({
                 href={unidad.pdf_url}
                 target="_blank"
                 rel="noreferrer"
+                onClick={() => sfx.playClick()}
                 className="text-[#9fef00] bg-[#112614] border border-[#9fef00]/40 px-3 py-1 rounded-lg hover:bg-[#9fef00] hover:text-slate-950 transition font-bold"
               >
                 📄 PLIEGO PDF
@@ -371,7 +408,7 @@ export default function DetalleUnidad({
         </div>
       </div>
 
-      {/* Panel Flotante de Inspección de Nodo (Estilo HTB / mapa_2) */}
+      {/* Panel Flotante de Inspección de Nodo */}
       {hoveredLeccion && (
         <aside className="fixed right-6 top-40 z-40 w-80 bg-[#0a1120]/95 border-2 border-[#ffb800] rounded-2xl p-4 shadow-[0_0_35px_rgba(255,184,0,0.3)] backdrop-blur-md pointer-events-none transition-all hidden lg:block">
           <div className="flex items-center justify-between border-b border-[#ffb800]/30 pb-2 mb-2 text-[10px] text-[#ffb800]">
@@ -434,12 +471,15 @@ export default function DetalleUnidad({
           unidad={unidad}
           leccion={leccionActivaModal}
           usuarioId={usuarioId}
-          onClose={() => setLeccionActivaModal(null)}
+          onClose={() => {
+            sfx.playClick();
+            setLeccionActivaModal(null);
+          }}
           onCompletar={handleMarcarCompletada}
         />
       )}
 
-      {/* Footer con Asistente Tiuque-Tec en Vivo (de mapa_2.jsx) */}
+      {/* Footer con Asistente Tiuque-Tec en Vivo */}
       <footer className="sticky bottom-0 w-full bg-[#060913]/95 border-t border-[#9fef00]/30 px-6 py-2.5 z-30 flex items-center justify-between backdrop-blur-md text-[11px]">
         <div className="flex items-center gap-3 truncate">
           <div className="w-7 h-7 rounded-lg bg-[#112614] border border-[#9fef00] flex items-center justify-center text-sm shadow-[0_0_10px_rgba(159,239,0,0.3)] shrink-0">

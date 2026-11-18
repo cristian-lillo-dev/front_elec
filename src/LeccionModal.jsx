@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import logoImg from './assets/logo_s.png';
 import wallMapa from './assets/wall_mapa.jpeg';
+import { sfx } from './soundEffects';
 
 const API_BASE_URL = 'https://backelec1-production.up.railway.app/api';
 
@@ -41,7 +42,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
         const rawImgPreguntas = Array.isArray(resImgPreguntas) ? resImgPreguntas : (resImgPreguntas.results || []);
 
         const paginasLeccion = rawPaginas
-          .filter(p => p.leccion === leccion.id || !p.leccion)
+          .filter(p => Number(p.leccion) === Number(leccion.id))
           .sort((a, b) => (a.numero_pagina || 0) - (b.numero_pagina || 0))
           .map(p => ({
             ...p,
@@ -56,7 +57,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
         const idsPaginas = paginasLeccion.map(p => p.id);
 
         const preguntasLeccion = rawPreguntas
-          .filter(q => idsPaginas.includes(q.pagina_leccion) || q.leccion === leccion.id)
+          .filter(q => idsPaginas.includes(q.pagina_leccion) || Number(q.leccion) === Number(leccion.id))
           .sort((a, b) => (a.numero_pregunta || 0) - (b.numero_pregunta || 0))
           .map(q => ({
             ...q,
@@ -103,10 +104,13 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
 
   const handleSiguientePagina = () => {
     if (paginaActualIdx < paginas.length - 1) {
+      sfx.playClick();
       setPaginaActualIdx(prev => prev + 1);
     } else if (preguntas.length > 0) {
+      sfx.playOpenNode();
       setFase('preguntas');
     } else {
+      sfx.playComplete();
       registrarProgreso();
       setFase('resultado');
     }
@@ -119,8 +123,10 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
     setEsCorrecta(correcta);
 
     if (correcta) {
+      sfx.playSuccess();
       setAciertos(prev => prev + 1);
     } else {
+      sfx.playError();
       setVidas(prev => Math.max(0, prev - 1));
     }
   };
@@ -129,8 +135,10 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
     setOpcionSeleccionada(null);
     setEsCorrecta(null);
     if (preguntaActualIdx < preguntas.length - 1) {
+      sfx.playClick();
       setPreguntaActualIdx(prev => prev + 1);
     } else {
+      sfx.playComplete();
       registrarProgreso();
       setFase('resultado');
     }
@@ -219,7 +227,11 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
               <span className="font-bold">{vidas}</span>
             </div>
             <button
-              onClick={onClose}
+              onMouseEnter={() => sfx.playHover()}
+              onClick={() => {
+                sfx.playClick();
+                onClose();
+              }}
               className="text-slate-300 hover:text-[#ffb800] bg-[#050914] border border-slate-700 hover:border-[#ffb800] px-3 py-1 rounded-lg transition text-xs cursor-pointer font-bold"
             >
               ✕ SALIR
@@ -274,6 +286,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
               </div>
 
               <button
+                onMouseEnter={() => sfx.playHover()}
                 onClick={handleSiguientePagina}
                 className="w-full py-3.5 bg-[#ffb800] hover:bg-[#e0a100] text-slate-950 font-black rounded-xl shadow-[0_0_20px_rgba(255,184,0,0.35)] transition text-xs uppercase cursor-pointer tracking-wider"
               >
@@ -320,6 +333,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
                   return (
                     <button
                       key={opcion.id || idx}
+                      onMouseEnter={() => opcionSeleccionada === null && sfx.playHover()}
                       onClick={() => handleSeleccionarOpcion(opcion)}
                       disabled={opcionSeleccionada !== null}
                       className={`w-full text-left p-4 rounded-xl border-2 text-xs sm:text-sm transition-all flex items-center justify-between gap-3 cursor-pointer ${estilosOpcion}`}
@@ -359,6 +373,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
                   </div>
 
                   <button
+                    onMouseEnter={() => sfx.playHover()}
                     onClick={handleSiguientePregunta}
                     className="w-full py-3.5 bg-[#9fef00] hover:bg-[#86cb00] text-slate-950 font-black rounded-xl shadow-[0_0_20px_rgba(159,239,0,0.35)] transition text-xs uppercase cursor-pointer tracking-wider"
                   >
@@ -402,7 +417,9 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
               </div>
 
               <button
+                onMouseEnter={() => sfx.playHover()}
                 onClick={() => {
+                  sfx.playClick();
                   if (onCompletar) onCompletar(leccion);
                   onClose();
                 }}
