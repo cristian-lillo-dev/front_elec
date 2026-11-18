@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import logoImg from './assets/logo_s.png';
 import wallMapa from './assets/wall_mapa.jpeg';
 
 const API_BASE_URL = 'https://backelec1-production.up.railway.app/api';
@@ -8,7 +9,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
   const [preguntas, setPreguntas] = useState([]);
   const [cargando, setCargando] = useState(true);
 
-  const [fase, setFase] = useState('teoria'); // 'teoria' | 'preguntas' | 'resultado'
+  const [fase, setFase] = useState('teoria');
   const [paginaActualIdx, setPaginaActualIdx] = useState(0);
   const [preguntaActualIdx, setPreguntaActualIdx] = useState(0);
 
@@ -23,7 +24,6 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
 
     const cargarDatosLeccion = async () => {
       try {
-        // 1. Obtener páginas, contenidos, imágenes y preguntas desde los ViewSets de Django
         const [resPaginas, resContenidos, resImgPaginas, resPreguntas, resOpciones, resImgPreguntas] = await Promise.all([
           fetch(`${API_BASE_URL}/paginas/?leccion=${leccion.id}`).then(r => r.json()).catch(() => []),
           fetch(`${API_BASE_URL}/contenidos/`).then(r => r.json()).catch(() => []),
@@ -40,7 +40,6 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
         const rawOpciones = Array.isArray(resOpciones) ? resOpciones : (resOpciones.results || []);
         const rawImgPreguntas = Array.isArray(resImgPreguntas) ? resImgPreguntas : (resImgPreguntas.results || []);
 
-        // Filtrar páginas que pertenecen a esta lección y ordenarlas por numero_pagina
         const paginasLeccion = rawPaginas
           .filter(p => p.leccion === leccion.id || !p.leccion)
           .sort((a, b) => (a.numero_pagina || 0) - (b.numero_pagina || 0))
@@ -56,7 +55,6 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
 
         const idsPaginas = paginasLeccion.map(p => p.id);
 
-        // Filtrar preguntas asociadas a las páginas de la lección
         const preguntasLeccion = rawPreguntas
           .filter(q => idsPaginas.includes(q.pagina_leccion) || q.leccion === leccion.id)
           .sort((a, b) => (a.numero_pregunta || 0) - (b.numero_pregunta || 0))
@@ -68,7 +66,6 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
               .sort((a, b) => (a.numero_imagen_pregunta || 0) - (b.numero_imagen_pregunta || 0))
           }));
 
-        // Respaldo demostrativo si la base de datos aún no tiene registros para esta lección
         setPaginas(paginasLeccion.length > 0 ? paginasLeccion : [
           {
             id: 1,
@@ -156,12 +153,14 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
     return (
       <div className="fixed inset-0 z-50 bg-[#050914] flex flex-col items-center justify-center font-mono text-[#ffb800] gap-3">
         <div 
-          className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none z-0 opacity-85 contrast-110"
+          className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none z-0 opacity-60 contrast-110"
           style={{ backgroundImage: `url(${wallMapa})` }}
         />
-        <div className="fixed inset-0 bg-[#050914]/40 pointer-events-none z-0" />
+        <div className="fixed inset-0 bg-[#050914]/70 pointer-events-none z-0" />
         <div className="w-9 h-9 border-2 border-[#ffb800] border-t-transparent rounded-full animate-spin relative z-10" />
-        <span className="text-xs tracking-widest animate-pulse relative z-10">[SPAWNING_NODE // DESCARGANDO PAQUETES SEC...]</span>
+        <span className="text-xs tracking-widest animate-pulse relative z-10 uppercase">
+          Cargando Módulo Normativo SEC...
+        </span>
       </div>
     );
   }
@@ -181,27 +180,29 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
   return (
     <div className="fixed inset-0 z-50 bg-[#050914] flex flex-col items-center justify-center p-4 sm:p-6 overflow-y-auto select-none font-mono">
       
-      {/* Fondo con wall_mapa.jpeg mucho más visible */}
+      {/* Fondo con wall_mapa.jpeg */}
       <div 
-        className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none z-0 opacity-85 contrast-110"
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none z-0 opacity-75 contrast-110"
         style={{ backgroundImage: `url(${wallMapa})` }}
       />
-      <div className="fixed inset-0 bg-gradient-to-b from-[#050914]/50 via-[#050914]/35 to-[#050914]/65 pointer-events-none z-0" />
+      <div className="fixed inset-0 bg-gradient-to-b from-[#050914]/70 via-[#050914]/55 to-[#050914]/80 pointer-events-none z-0" />
 
       <div className="w-full max-w-2xl my-auto flex flex-col gap-4 relative z-10">
         
-        {/* HUD Superior del Modal */}
-        <div className="w-full bg-[#0a1120]/90 backdrop-blur-md border border-[#ffb800]/40 rounded-xl p-3 flex items-center justify-between gap-4 shadow-[0_0_25px_rgba(0,0,0,0.8)]">
-          <button
-            onClick={onClose}
-            className="text-slate-300 hover:text-[#ffb800] bg-[#050914] border border-slate-700 hover:border-[#ffb800] px-3 py-1.5 rounded-lg transition text-xs cursor-pointer font-bold"
-          >
-            ✕ EXIT_BOX
-          </button>
+        {/* HUD Superior del Modal con Logo AREAELECTRICA */}
+        <div className="w-full bg-[#0a1120]/95 backdrop-blur-md border border-[#ffb800]/40 rounded-2xl p-3.5 flex items-center justify-between gap-4 shadow-[0_0_25px_rgba(0,0,0,0.8)]">
+          <div className="flex items-center gap-2.5">
+            <img src={logoImg} alt="AreaElectrica" className="w-8 h-8 object-contain rounded-lg border border-[#9fef00]/40" />
+            <span className="text-xs font-black tracking-wider text-white uppercase hidden sm:inline">
+              AREA<span className="text-[#9fef00]">ELECTRICA</span>
+            </span>
+          </div>
 
           <div className="flex-1 flex flex-col gap-1">
-            <div className="flex justify-between text-[9px] text-slate-400">
-              <span>{fase === 'teoria' ? 'MODO: LECTURA_TEÓRICA' : fase === 'preguntas' ? 'MODO: CAPTURA_DE_FLAG' : 'MODO: COMPLETADO'}</span>
+            <div className="flex justify-between text-[10px] text-slate-300 font-bold">
+              <span>
+                {fase === 'teoria' ? 'FASE 1: LECTURA TÉCNICA' : fase === 'preguntas' ? 'FASE 2: EVALUACIÓN DE CAMPO' : 'MÓDULO COMPLETADO'}
+              </span>
               <span className="text-[#9fef00]">{Math.round(progresoPorcentaje)}%</span>
             </div>
             <div className="w-full h-2.5 bg-[#050914] rounded-full border border-slate-800 overflow-hidden p-0.5">
@@ -213,37 +214,35 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
           </div>
 
           <div className="flex items-center gap-2 text-xs">
-            <div className="flex items-center gap-1 text-rose-400 bg-rose-950/50 border border-rose-500/40 px-2.5 py-1 rounded-lg">
+            <div className="flex items-center gap-1 text-rose-400 bg-rose-950/60 border border-rose-500/40 px-2.5 py-1 rounded-lg">
               <span>❤️</span>
               <span className="font-bold">{vidas}</span>
             </div>
-            <div className="flex items-center gap-1 text-[#ffb800] bg-[#261f0c] border border-[#ffb800]/40 px-2.5 py-1 rounded-lg">
-              <span>⚡</span>
-              <span>
-                {fase === 'teoria'
-                  ? `Pág ${paginaActualIdx + 1}/${totalPasosTeoria}`
-                  : `Q ${preguntaActualIdx + 1}/${totalPreguntas}`}
-              </span>
-            </div>
+            <button
+              onClick={onClose}
+              className="text-slate-300 hover:text-[#ffb800] bg-[#050914] border border-slate-700 hover:border-[#ffb800] px-3 py-1 rounded-lg transition text-xs cursor-pointer font-bold"
+            >
+              ✕ SALIR
+            </button>
           </div>
         </div>
 
-        {/* Ventana Principal Estilo Terminal HTB */}
-        <div className="w-full bg-[#0a1120]/90 backdrop-blur-md border-2 border-[#ffb800]/60 rounded-2xl p-6 sm:p-8 shadow-[0_0_45px_rgba(255,184,0,0.15)] flex flex-col relative max-h-[78vh] overflow-y-auto">
+        {/* Ventana Principal Estilo HTB */}
+        <div className="w-full bg-[#0a1120]/95 backdrop-blur-md border-2 border-[#ffb800]/60 rounded-2xl p-6 sm:p-8 shadow-[0_0_45px_rgba(255,184,0,0.15)] flex flex-col relative max-h-[78vh] overflow-y-auto">
           
-          {/* FASE 1: PÁGINAS DE TEORÍA */}
+          {/* FASE 1: TEORÍA */}
           {fase === 'teoria' && paginaActual && (
             <div className="flex flex-col">
               <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
                 <span className="text-[10px] text-[#9fef00] bg-[#112614] border border-[#9fef00]/40 px-3 py-1 rounded-md uppercase font-bold">
-                  root@sec-ric:~# cat pagina_{paginaActual.numero_pagina || paginaActualIdx + 1}.md
+                  📖 PÁGINA {paginaActual.numero_pagina || paginaActualIdx + 1} DE {totalPasosTeoria}
                 </span>
-                <span className="text-[10px] text-[#ffb800]">
-                  [CHALLENGE // {leccion.numero_leccion || leccion.orden || 1}]
+                <span className="text-[10px] text-[#ffb800] font-bold uppercase">
+                  MÓDULO N° {leccion.numero_leccion || leccion.orden || 1}
                 </span>
               </div>
 
-              <h2 className="text-lg sm:text-xl font-bold text-white mb-4 leading-snug">
+              <h2 className="text-lg sm:text-xl font-bold text-white mb-4 leading-snug font-sans">
                 {leccion.nombre}
               </h2>
 
@@ -276,40 +275,30 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
 
               <button
                 onClick={handleSiguientePagina}
-                className="w-full py-3.5 bg-[#ffb800] hover:bg-[#e0a100] text-slate-950 font-bold rounded-xl shadow-[0_0_20px_rgba(255,184,0,0.35)] transition text-xs uppercase cursor-pointer tracking-wider"
+                className="w-full py-3.5 bg-[#ffb800] hover:bg-[#e0a100] text-slate-950 font-black rounded-xl shadow-[0_0_20px_rgba(255,184,0,0.35)] transition text-xs uppercase cursor-pointer tracking-wider"
               >
                 {paginaActualIdx < totalPasosTeoria - 1
                   ? 'SIGUIENTE PÁGINA ➔'
                   : preguntas.length > 0
-                  ? 'EJECUTAR EVALUACIÓN DE CAMPO ⚡'
+                  ? 'INICIAR EVALUACIÓN DE CAMPO ⚡'
                   : 'COMPLETAR MÓDULO ✔'}
               </button>
             </div>
           )}
 
-          {/* FASE 2: PREGUNTAS / CAPTURA DE FLAG */}
+          {/* FASE 2: PREGUNTAS */}
           {fase === 'preguntas' && preguntaActual && (
             <div className="flex flex-col">
               <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
                 <span className="text-[10px] text-[#ffb800] bg-[#261f0c] border border-[#ffb800]/40 px-3 py-1 rounded-md uppercase font-bold">
-                  🎯 FLAG_VERIFICATION // PREGUNTA #{preguntaActual.numero_pregunta || preguntaActualIdx + 1}
+                  🎯 PREGUNTA {preguntaActual.numero_pregunta || preguntaActualIdx + 1} DE {totalPreguntas}
                 </span>
-                <span className="text-[10px] text-[#9fef00]">[+100 XP]</span>
+                <span className="text-[10px] text-[#9fef00] font-bold">+100 XP</span>
               </div>
 
               <h3 className="text-base sm:text-lg font-bold text-white mb-5 leading-snug font-sans">
                 {preguntaActual.texto}
               </h3>
-
-              {preguntaActual.imagenes && preguntaActual.imagenes.length > 0 && (
-                <div className="mb-5">
-                  {preguntaActual.imagenes.map((img, i) => (
-                    <div key={img.id || i} className="bg-[#050914] border border-slate-800 rounded-xl p-3 text-center text-xs text-slate-400">
-                      Diagrama adjunto: <span className="text-[#9fef00]">{img.nombre}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
 
               <div className="flex flex-col gap-3 mb-6">
                 {preguntaActual.opciones?.map((opcion, idx) => {
@@ -353,7 +342,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
               </div>
 
               {opcionSeleccionada !== null && (
-                <div className="flex flex-col gap-3 animate-fadeIn">
+                <div className="flex flex-col gap-3">
                   <div
                     className={`p-3.5 rounded-xl text-xs font-bold flex items-center justify-between ${
                       esCorrecta
@@ -363,31 +352,31 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
                   >
                     <span>
                       {esCorrecta
-                        ? '⚡ [ROOT_FLAG_CAPTURED] ¡Respuesta correcta conforme a la normativa SEC!'
-                        : '⚠️ [SHORT_CIRCUIT] Respuesta incorrecta. Revisa el pliego normativo RIC.'}
+                        ? '⚡ ¡Respuesta correcta conforme a la normativa SEC!'
+                        : '⚠️ Respuesta incorrecta. Revisa el pliego normativo RIC.'}
                     </span>
                     <span>{esCorrecta ? '+25 NC' : '-1 HP'}</span>
                   </div>
 
                   <button
                     onClick={handleSiguientePregunta}
-                    className="w-full py-3.5 bg-[#9fef00] hover:bg-[#86cb00] text-slate-950 font-bold rounded-xl shadow-[0_0_20px_rgba(159,239,0,0.35)] transition text-xs uppercase cursor-pointer tracking-wider"
+                    className="w-full py-3.5 bg-[#9fef00] hover:bg-[#86cb00] text-slate-950 font-black rounded-xl shadow-[0_0_20px_rgba(159,239,0,0.35)] transition text-xs uppercase cursor-pointer tracking-wider"
                   >
-                    {preguntaActualIdx < totalPreguntas - 1 ? 'SIGUIENTE RETO ➔' : 'VER REPORTE FINAL ⚡'}
+                    {preguntaActualIdx < totalPreguntas - 1 ? 'SIGUIENTE PREGUNTA ➔' : 'VER REPORTE FINAL ⚡'}
                   </button>
                 </div>
               )}
             </div>
           )}
 
-          {/* FASE 3: RESULTADO / PWNED BOX */}
+          {/* FASE 3: RESULTADO */}
           {fase === 'resultado' && (
             <div className="flex flex-col items-center text-center py-6">
               <div className="w-20 h-20 rounded-2xl bg-[#112614] border-2 border-[#9fef00] mb-4 shadow-[0_0_30px_rgba(159,239,0,0.4)] flex items-center justify-center text-4xl">
                 ⚡
               </div>
-              <span className="text-[10px] text-[#9fef00] bg-[#112614] border border-[#9fef00]/40 px-3 py-0.5 rounded-full uppercase mb-2">
-                NODE_PWNED // CERTIFICACIÓN ACTUALIZADA
+              <span className="text-[10px] text-[#9fef00] bg-[#112614] border border-[#9fef00]/40 px-3 py-0.5 rounded-full uppercase font-bold mb-2">
+                CERTIFICACIÓN DE MÓDULO ACTUALIZADA
               </span>
               <h2 className="text-2xl font-black text-white mb-2">¡MÓDULO DOMINADO!</h2>
               <p className="text-xs text-slate-300 mb-6 font-sans max-w-md">
@@ -401,13 +390,13 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
                   <span className="text-lg font-bold text-white mt-1">{totalPasosTeoria}</span>
                 </div>
                 <div className="bg-[#050914] border border-[#ffb800]/40 p-3 rounded-xl flex flex-col items-center">
-                  <span className="text-[9px] text-[#ffb800]">FLAGS / ACIERTOS</span>
+                  <span className="text-[9px] text-[#ffb800]">ACIERTOS</span>
                   <span className="text-lg font-bold text-white mt-1">
                     {aciertos} / {totalPreguntas}
                   </span>
                 </div>
                 <div className="bg-[#050914] border border-rose-500/40 p-3 rounded-xl flex flex-col items-center">
-                  <span className="text-[9px] text-rose-400">VIDAS RESTANTES</span>
+                  <span className="text-[9px] text-rose-400">ENERGÍA</span>
                   <span className="text-lg font-bold text-white mt-1">{vidas} ❤️</span>
                 </div>
               </div>

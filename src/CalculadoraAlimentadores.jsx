@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import logoImg from './assets/logo_s.png';
 
 const SECCIONES_COMERCIALES = [
   { seccion: 1.5, ampCobre: 15, ampAlu: 0 },
@@ -15,7 +16,7 @@ const SECCIONES_COMERCIALES = [
   { seccion: 120.0, ampCobre: 239, ampAlu: 186 }
 ];
 
-export default function CalculadoraAlimentadores({ onVolver }) {
+export default function CalculadoraAlimentadores({ user, nombreUsuario, onVolver, onLogout }) {
   const [systemType, setSystemType] = useState('1F');
   const [material, setMaterial] = useState('0.018');
   const [voltage, setVoltage] = useState(220);
@@ -102,27 +103,65 @@ export default function CalculadoraAlimentadores({ onVolver }) {
   const deltaV_real = (k * l * iVal * rho) / seccionFinal.seccion;
   const pctDrop_real = (deltaV_real / vVal) * 100;
   const capFinal = isCobre ? seccionPorCorriente.ampCobre : seccionPorCorriente.ampAlu;
+  const displayUser = nombreUsuario || user?.username || 'Operador SEC';
 
   return (
-    <div className="min-h-screen bg-[#050914] text-slate-100 font-mono flex flex-col justify-between selection:bg-[#9fef00] selection:text-slate-950">
-      <header className="sticky top-0 z-50 bg-[#080d1a]/95 backdrop-blur-xl border-b border-[#9fef00]/30 px-6 py-4 flex items-center justify-between shadow-[0_0_20px_rgba(159,239,0,0.1)]">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={onVolver} 
-            className="bg-[#112614] hover:bg-[#9fef00] text-[#9fef00] hover:text-slate-950 border border-[#9fef00]/40 px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-md"
-          >
-            <span>◀</span> VOLVER AL DASHBOARD
-          </button>
-          <span className="text-xs font-bold text-white uppercase tracking-wider">
-            CALCULADORA DE ALIMENTADORES ELÉCTRICOS <span className="text-[#ffb800]">[RIC N°03 / RIC N°04]</span>
-          </span>
-        </div>
-        <div className="text-xs text-[#9fef00] font-mono hidden sm:block">
-          [MEMORIA TÉCNICA APTA TE1]
+    <div className="min-h-screen bg-[#050914] text-slate-100 font-mono flex flex-col justify-between selection:bg-[#9fef00] selection:text-slate-950 relative overflow-x-hidden">
+      
+      {/* Grid Técnico de Fondo */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#9fef0008_1px,transparent_1px),linear-gradient(to_bottom,#9fef0008_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+
+      {/* Menú Global Unificado */}
+      <header className="sticky top-0 z-50 bg-[#080d1a]/95 backdrop-blur-xl border-b border-[#9fef00]/30 px-6 py-3.5 shadow-[0_0_20px_rgba(159,239,0,0.1)]">
+        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+          <div className="flex items-center space-x-6">
+            <div onClick={onVolver} className="flex items-center space-x-3 cursor-pointer group">
+              <img src={logoImg} alt="AreaElectrica Logo" className="w-9 h-9 object-contain rounded-xl group-hover:scale-105 transition border border-[#9fef00]/40" />
+              <div className="flex flex-col">
+                <span className="text-sm font-black tracking-wider text-white uppercase">
+                  AREA<span className="text-[#9fef00]">ELECTRICA</span> <span className="text-[#ffb800] text-[10px]">TALLER</span>
+                </span>
+                <span className="text-[9px] text-slate-400 tracking-widest">CALCULADORA NORMATIVA RIC N°03 / N°04</span>
+              </div>
+            </div>
+
+            <nav className="hidden md:flex items-center space-x-2 text-xs">
+              <button
+                onClick={onVolver}
+                className="px-3.5 py-1.5 rounded-xl font-bold text-slate-300 hover:text-[#9fef00] bg-[#0d1527]/70 hover:bg-[#0d1527] border border-slate-800 hover:border-[#9fef00]/40 transition cursor-pointer"
+              >
+                ⚡ PANEL DE ESTUDIO
+              </button>
+              <span className="px-3.5 py-1.5 rounded-xl font-bold bg-[#112614] text-[#9fef00] border border-[#9fef00]/50 shadow-[0_0_12px_rgba(159,239,0,0.15)]">
+                📊 CALCULADORA RIC
+              </span>
+            </nav>
+          </div>
+
+          <div className="flex items-center space-x-2.5">
+            <div className="hidden sm:flex items-center space-x-2 bg-[#0d1527] border border-[#ffb800]/40 px-3 py-1 rounded-lg text-xs">
+              <span className="w-2 h-2 rounded-full bg-[#9fef00]" />
+              <span className="font-bold text-[#ffb800]">{displayUser}</span>
+            </div>
+            <button 
+              onClick={onVolver} 
+              className="bg-[#112614] hover:bg-[#9fef00] text-[#9fef00] hover:text-slate-950 border border-[#9fef00]/40 px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-md"
+            >
+              <span>◀</span> VOLVER AL PANEL
+            </button>
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="px-3 h-8 rounded-xl bg-[#0d1527] hover:bg-rose-950/60 border border-slate-700 hover:border-rose-500/60 text-slate-300 hover:text-rose-400 text-xs font-bold transition cursor-pointer"
+              >
+                SALIR ⌁
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8 space-y-6 flex-1">
+      <main className="max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8 space-y-6 flex-1 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           {/* Entradas */}
@@ -132,7 +171,9 @@ export default function CalculadoraAlimentadores({ onVolver }) {
                 <h3 className="text-xs font-bold text-[#9fef00] uppercase tracking-wider flex items-center gap-2">
                   <span>⚙️</span> Parámetros de Entrada (Editable)
                 </h3>
-                <span className="text-[10px] bg-[#112614] border border-[#9fef00]/50 px-2 py-0.5 rounded text-[#9fef00] font-bold">CAMPOS VERDES</span>
+                <span className="text-[10px] bg-[#112614] border border-[#9fef00]/50 px-2 py-0.5 rounded text-[#9fef00] font-bold">
+                  MEMORIA TE1
+                </span>
               </div>
 
               <div>
@@ -147,14 +188,14 @@ export default function CalculadoraAlimentadores({ onVolver }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-[#9fef00] mb-1">Sistema</label>
-                  <select value={systemType} onChange={handleSystemChange} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] focus:ring-2 focus:ring-[#9fef00]/30 outline-none transition cursor-pointer">
+                  <select value={systemType} onChange={handleSystemChange} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] outline-none transition cursor-pointer">
                     <option value="1F">Monofásico (1F)</option>
                     <option value="3F">Trifásico (3F)</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#9fef00] mb-1">Material Conductor</label>
-                  <select value={material} onChange={(e) => setMaterial(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] focus:ring-2 focus:ring-[#9fef00]/30 outline-none transition cursor-pointer">
+                  <select value={material} onChange={(e) => setMaterial(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] outline-none transition cursor-pointer">
                     <option value="0.018">Cobre (ρ = 0,018)</option>
                     <option value="0.028">Aluminio (ρ = 0,028)</option>
                   </select>
@@ -164,33 +205,33 @@ export default function CalculadoraAlimentadores({ onVolver }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-[#9fef00] mb-1">Tensión Nominal (V)</label>
-                  <input type="number" value={voltage} onChange={(e) => setVoltage(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] focus:ring-2 focus:ring-[#9fef00]/30 outline-none transition" />
+                  <input type="number" value={voltage} onChange={(e) => setVoltage(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] outline-none transition" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#9fef00] mb-1">Longitud L (m)</label>
-                  <input type="number" value={distance} onChange={(e) => setDistance(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] focus:ring-2 focus:ring-[#9fef00]/30 outline-none transition" />
+                  <input type="number" value={distance} onChange={(e) => setDistance(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] outline-none transition" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-[#9fef00] mb-1">Potencia Activa (W)</label>
-                  <input type="number" value={power} onChange={(e) => handlePowerChange(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] focus:ring-2 focus:ring-[#9fef00]/30 outline-none transition" />
+                  <input type="number" value={power} onChange={(e) => handlePowerChange(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] outline-none transition" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#9fef00] mb-1">Factor Potencia (cos φ)</label>
-                  <input type="number" step="0.01" value={cosPhi} onChange={(e) => setCosPhi(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] focus:ring-2 focus:ring-[#9fef00]/30 outline-none transition" />
+                  <input type="number" step="0.01" value={cosPhi} onChange={(e) => setCosPhi(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] outline-none transition" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-[#9fef00] mb-1">Corriente de Carga (A)</label>
-                  <input type="number" step="0.01" value={current} onChange={(e) => handleCurrentChange(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] focus:ring-2 focus:ring-[#9fef00]/30 outline-none transition" />
+                  <input type="number" step="0.01" value={current} onChange={(e) => handleCurrentChange(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] outline-none transition" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#9fef00] mb-1">Caída Máx. (%ΔV)</label>
-                  <input type="number" step="0.1" value={maxVdrop} onChange={(e) => setMaxVdrop(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] focus:ring-2 focus:ring-[#9fef00]/30 outline-none transition" />
+                  <input type="number" step="0.1" value={maxVdrop} onChange={(e) => setMaxVdrop(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] outline-none transition" />
                 </div>
               </div>
             </div>
@@ -212,16 +253,19 @@ export default function CalculadoraAlimentadores({ onVolver }) {
 
           {/* Resultados */}
           <div className="lg:col-span-7 space-y-6">
-            {/* Highlight Card */}
             <div className="bg-gradient-to-r from-[#0d1f14] via-[#0a1120] to-[#1a1505] border-2 border-[#9fef00] text-white rounded-2xl p-6 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <span className="text-[10px] uppercase tracking-widest text-[#9fef00]">Sección Comercial Recomendada</span>
-                <div className="text-4xl font-extrabold mt-1 tracking-tight text-[#ffb800]">{seccionFinal.seccion.toFixed(1).replace('.0','')} mm²</div>
-                <p className="text-xs text-slate-300 mt-1 font-normal">
+                <span className="text-[10px] uppercase tracking-widest text-[#9fef00] font-bold">
+                  Sección Comercial Recomendada
+                </span>
+                <div className="text-4xl font-extrabold mt-1 tracking-tight text-[#ffb800]">
+                  {seccionFinal.seccion.toFixed(1).replace('.0','')} mm²
+                </div>
+                <p className="text-xs text-slate-300 mt-1 font-sans">
                   Caída real calculada: <strong className="text-white">{pctDrop_real.toFixed(2)}%</strong> ({deltaV_real.toFixed(2)} V) — Cumple RIC N°03
                 </p>
               </div>
-              <div className="flex items-center gap-1.5 bg-[#112614] border border-[#9fef00]/40 px-3.5 py-2 rounded-xl text-xs font-semibold text-[#9fef00] self-start sm:self-center shadow-inner">
+              <div className="flex items-center gap-1.5 bg-[#112614] border border-[#9fef00]/40 px-3.5 py-2 rounded-xl text-xs font-bold text-[#9fef00] self-start sm:self-center shadow-inner">
                 <span>✔</span>
                 <span>Conforme SEC</span>
               </div>
@@ -233,11 +277,12 @@ export default function CalculadoraAlimentadores({ onVolver }) {
                 <h3 className="text-xs font-bold text-[#ffb800] uppercase tracking-wider flex items-center gap-2">
                   <span>📋</span> Desglose del Cálculo Normativo
                 </h3>
-                <span className="text-[10px] bg-[#050914] px-2 py-0.5 rounded text-slate-400 border border-slate-800">4 Etapas</span>
+                <span className="text-[10px] bg-[#050914] px-2 py-0.5 rounded text-slate-400 border border-slate-800">
+                  4 Etapas
+                </span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Paso 1 */}
                 <div className="bg-[#050914] p-4 rounded-xl border border-slate-800 flex flex-col justify-between space-y-2">
                   <div>
                     <div className="flex justify-between items-center mb-1">
@@ -248,10 +293,9 @@ export default function CalculadoraAlimentadores({ onVolver }) {
                       {systemType === '1F' ? `I = ${pVal} / (${vVal} · ${cpVal}) = ${iVal.toFixed(2)} A` : `I = ${pVal} / (√3 · ${vVal} · ${cpVal}) = ${iVal.toFixed(2)} A`}
                     </div>
                   </div>
-                  <p className="text-[11px] text-slate-400">Corriente nominal permanente que circulará por el alimentador.</p>
+                  <p className="text-[11px] text-slate-400 font-sans">Corriente nominal permanente que circulará por el alimentador.</p>
                 </div>
 
-                {/* Paso 2 */}
                 <div className="bg-[#050914] p-4 rounded-xl border border-slate-800 flex flex-col justify-between space-y-2">
                   <div>
                     <div className="flex justify-between items-center mb-1">
@@ -259,13 +303,12 @@ export default function CalculadoraAlimentadores({ onVolver }) {
                       <span className="text-[10px] font-bold bg-[#112614] text-[#9fef00] px-2 py-0.5 rounded border border-[#9fef00]/30">Mínimo {seccionPorCorriente.seccion} mm²</span>
                     </div>
                     <div className="text-[11px] text-slate-300 bg-[#0a1120] p-2.5 rounded-lg border border-slate-800 my-2">
-                      I_adm = I_diseño ({capFinal} A = {iVal.toFixed(2)} A)
+                      I_adm ≥ I_diseño ({capFinal} A ≥ {iVal.toFixed(2)} A)
                     </div>
                   </div>
-                  <p className="text-[11px] text-slate-400">Conductor en ducto según tabla RIC N°04 tolera hasta {capFinal} A.</p>
+                  <p className="text-[11px] text-slate-400 font-sans">Conductor en ducto según tabla RIC N°04 tolera hasta {capFinal} A.</p>
                 </div>
 
-                {/* Paso 3 */}
                 <div className="bg-[#050914] p-4 rounded-xl border border-slate-800 flex flex-col justify-between space-y-2">
                   <div>
                     <div className="flex justify-between items-center mb-1">
@@ -276,10 +319,9 @@ export default function CalculadoraAlimentadores({ onVolver }) {
                       S_mín = ({systemType === '1F' ? '2' : '√3'} · {l} · {iVal.toFixed(2)} · {rho}) / {deltaV_max.toFixed(2)} = {s_teorica.toFixed(2)} mm²
                     </div>
                   </div>
-                  <p className="text-[11px] text-slate-400">Límite legal RIC N°03: {maxDropPct}% de {vVal}V = {deltaV_max.toFixed(2)} V.</p>
+                  <p className="text-[11px] text-slate-400 font-sans">Límite legal RIC N°03: {maxDropPct}% de {vVal}V = {deltaV_max.toFixed(2)} V.</p>
                 </div>
 
-                {/* Paso 4 */}
                 <div className="bg-[#050914] p-4 rounded-xl border border-slate-800 flex flex-col justify-between space-y-2">
                   <div>
                     <div className="flex justify-between items-center mb-1">
@@ -290,7 +332,7 @@ export default function CalculadoraAlimentadores({ onVolver }) {
                       ΔV = {deltaV_real.toFixed(2)} V ({pctDrop_real.toFixed(2)}%)
                     </div>
                   </div>
-                  <p className="text-[11px] text-slate-400">Sección comercial normalizada que satisface ambos pliegos SEC.</p>
+                  <p className="text-[11px] text-slate-400 font-sans">Sección comercial normalizada que satisface ambos pliegos SEC.</p>
                 </div>
               </div>
             </div>
@@ -350,8 +392,8 @@ export default function CalculadoraAlimentadores({ onVolver }) {
         </div>
       </main>
 
-      <footer className="bg-[#080d1a] border-t border-[#9fef00]/30 py-4 px-6 text-center text-xs text-slate-400">
-        @Team RIC-CHILE — Portal de Documentación Técnica Normativa RIC.
+      <footer className="bg-[#080d1a] border-t border-[#9fef00]/30 py-4 px-6 text-center text-xs text-slate-400 relative z-10">
+        AreaElectrica & Tiuque-Tec — Portal de Documentación y Cálculo Normativo RIC.
       </footer>
     </div>
   );
