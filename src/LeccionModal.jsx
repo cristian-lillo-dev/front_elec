@@ -5,7 +5,6 @@ import { sfx } from './soundEffects';
 
 const API_BASE_URL = 'https://backelec1-production.up.railway.app/api';
 
-// Extrae el ID de una llave foránea sin importar cómo la serialice Django
 const extraerId = (valor) => {
   if (valor === null || valor === undefined) return null;
   if (typeof valor === 'object') return valor.id ?? valor.pk ?? null;
@@ -18,7 +17,6 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
   const [totalPaginasCount, setTotalPaginasCount] = useState(0);
   const [totalPreguntasCount, setTotalPreguntasCount] = useState(0);
   const [cargando, setCargando] = useState(true);
-  const [debugInfo, setDebugInfo] = useState(null);
 
   const [finalizado, setFinalizado] = useState(false);
   const [opcionSeleccionada, setOpcionSeleccionada] = useState(null);
@@ -51,7 +49,6 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
         const rawOpciones = Array.isArray(resOpciones) ? resOpciones : (resOpciones.results || []);
         const rawImgPreguntas = Array.isArray(resImgPreguntas) ? resImgPreguntas : (resImgPreguntas.results || []);
 
-        // 1. Filtrar SOLO las páginas reales de esta lección desde la BD
         const paginasBase = Array.isArray(leccion.paginas) && leccion.paginas.length > 0
           ? leccion.paginas
           : rawPaginas.filter(p => {
@@ -89,7 +86,6 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
 
         const idsPaginas = paginasLeccion.map(p => Number(p.id));
 
-        // 2. Filtrar SOLO las preguntas reales de esta lección/páginas desde la BD
         const preguntasLeccion = rawPreguntas
           .filter(q => {
             const fkPag = extraerId(q.pagina_leccion ?? q.pagina_leccion_id ?? q.pagina ?? q.pagina_id);
@@ -122,20 +118,11 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
             };
           });
 
-        // Guardar resumen técnico por si la lección aún no tiene páginas vinculadas
-        setDebugInfo({
-          leccionIdBuscada: leccion.id,
-          totalPaginasEnAPI: rawPaginas.length,
-          ejemploPaginaAPI: rawPaginas[0] || null
-        });
-
-        // 3. Construir la secuencia intercalada SOLO con datos reales: [Página 1, Pregunta(s) Pág 1, Página 2, Pregunta(s) Pág 2]
         const secuenciaIntercalada = [];
-        const preguntasUsadasIds = new Set();
         let contadorPag = 0;
         let contadorPreg = 0;
 
-        paginasLeccion.forEach((pagina, idx) => {
+        paginasLeccion.forEach((pagina) => {
           contadorPag += 1;
           secuenciaIntercalada.push({
             tipo: 'teoria',
@@ -143,50 +130,20 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
             data: pagina
           });
 
-          const preguntasDeEstaPagina = Array.isArray(pagina.preguntas) && pagina.preguntas.length > 0
-            ? pagina.preguntas
-            : preguntasLeccion.filter(q => {
-                const fkPag = extraerId(q.pagina_leccion ?? q.pagina_leccion_id ?? q.pagina ?? q.pagina_id);
-                return Number(fkPag) === Number(pagina.id);
-              });
+          const preguntasDeEstaPagina = preguntasLeccion.filter(q => {
+            const fkPag = extraerId(q.pagina_leccion ?? q.pagina_leccion_id ?? q.pagina ?? q.pagina_id);
+            return Number(fkPag) === Number(pagina.id);
+          });
 
           if (preguntasDeEstaPagina.length > 0) {
             preguntasDeEstaPagina.forEach(preg => {
-              if (!preguntasUsadasIds.has(preg.id)) {
-                preguntasUsadasIds.add(preg.id);
-                contadorPreg += 1;
-                secuenciaIntercalada.push({
-                  tipo: 'pregunta',
-                  ordenPregunta: contadorPreg,
-                  ordenPaginaAsociada: contadorPag,
-                  data: preg
-                });
-              }
-            });
-          } else {
-            const preguntaPorIndice = preguntasLeccion[idx];
-            if (preguntaPorIndice && !preguntasUsadasIds.has(preguntaPorIndice.id)) {
-              preguntasUsadasIds.add(preguntaPorIndice.id);
               contadorPreg += 1;
               secuenciaIntercalada.push({
                 tipo: 'pregunta',
                 ordenPregunta: contadorPreg,
                 ordenPaginaAsociada: contadorPag,
-                data: preguntaPorIndice
+                data: preg
               });
-            }
-          }
-        });
-
-        preguntasLeccion.forEach(preg => {
-          if (!preguntasUsadasIds.has(preg.id)) {
-            preguntasUsadasIds.add(preg.id);
-            contadorPreg += 1;
-            secuenciaIntercalada.push({
-              tipo: 'pregunta',
-              ordenPregunta: contadorPreg,
-              ordenPaginaAsociada: contadorPag || 1,
-              data: preg
             });
           }
         });
@@ -205,7 +162,72 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
     cargarDatosReales();
   }, [leccion]);
 
+  // Función para leer exclusivamente el título y el contenido con acento de Español de México (es-MX)
+  const leerContenidoActual = () => {
+    if (!('speechSynthesis' in window)) {
+      console.warn("Tu navegador no soporta síntesis de voz.");
+      return;
+    }
+
+    // Cancelar cualquier audio anterior
+    window.speechSynthesis.cancel();
+
+    const pasoActual = pasos[pasoActualIdx];
+    
+    // Obtener las voces disponibles del navegador
+    const voces = window.speechSynthesis.getVoices();
+    // Buscar explícitamente una voz de México (es-MX)
+    const vozMexico = voces.find(voz => voz.lang.toLowerCase().includes('es-mx'));
+
+    if (pasoActual?.tipo === 'teoria') {
+      const titulo = pasoActual.data.titulo || pasoActual.data.nombre || leccion.nombre || '';
+      
+      let textosContenido = '';
+      if (pasoActual.data.contenidos && pasoActual.data.contenidos.length > 0) {
+        textosContenido = pasoActual.data.contenidos
+          .map(c => c.texto || c.contenido || c.descripcion || '')
+          .filter(Boolean)
+          .join('. ');
+      } else {
+        textosContenido = pasoActual.data.texto || pasoActual.data.contenido || pasoActual.data.descripcion || '';
+      }
+
+      const textoCompleto = `${titulo}. ${textosContenido}`;
+      const utterance = new SpeechSynthesisUtterance(textoCompleto);
+      
+      if (vozMexico) {
+        utterance.voice = vozMexico;
+        utterance.lang = vozMexico.lang;
+      } else {
+        utterance.lang = 'es-MX'; // Forzar idioma base México
+      }
+      utterance.rate = 1.0;
+
+      window.speechSynthesis.speak(utterance);
+    } else if (pasoActual?.tipo === 'pregunta') {
+      const enunciado = pasoActual.data.texto || pasoActual.data.enunciado || pasoActual.data.pregunta || '';
+      const utterance = new SpeechSynthesisUtterance(`Pregunta: ${enunciado}`);
+      
+      if (vozMexico) {
+        utterance.voice = vozMexico;
+        utterance.lang = vozMexico.lang;
+      } else {
+        utterance.lang = 'es-MX';
+      }
+
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  // Detener la lectura al cambiar de paso o cerrar el modal
+  useEffect(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  }, [pasoActualIdx]);
+
   const avanzarAlSiguientePaso = () => {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     setOpcionSeleccionada(null);
     setEsCorrecta(null);
 
@@ -262,7 +284,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
         <div className="fixed inset-0 bg-[#050914]/70 pointer-events-none z-0" />
         <div className="w-9 h-9 border-2 border-[#ffb800] border-t-transparent rounded-full animate-spin relative z-10" />
         <span className="text-xs tracking-widest animate-pulse relative z-10 uppercase">
-          Cargando desde Railway...
+          Cargando Módulo Normativo SEC...
         </span>
       </div>
     );
@@ -285,7 +307,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
       />
       <div className="fixed inset-0 bg-gradient-to-b from-[#050914]/70 via-[#050914]/55 to-[#050914]/80 pointer-events-none z-0" />
 
-      <div className="w-full max-w-2xl my-auto flex flex-col gap-4 relative z-10">
+      <div className="w-full max-w-3xl my-auto flex flex-col gap-5 relative z-10">
         
         {/* HUD Superior */}
         <div className="w-full bg-[#0a1120]/95 backdrop-blur-md border border-[#ffb800]/40 rounded-2xl p-3.5 flex items-center justify-between gap-4 shadow-[0_0_25px_rgba(0,0,0,0.8)]">
@@ -300,7 +322,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
             <div className="flex justify-between text-[10px] text-slate-300 font-bold">
               <span>
                 {pasos.length === 0
-                  ? 'SIN REGISTROS EN BD'
+                  ? 'CONTENIDO EN PREPARACIÓN'
                   : finalizado
                   ? 'MÓDULO COMPLETADO'
                   : pasoActual?.tipo === 'teoria'
@@ -325,6 +347,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
             <button
               onMouseEnter={() => sfx.playHover()}
               onClick={() => {
+                if ('speechSynthesis' in window) window.speechSynthesis.cancel();
                 sfx.playClick();
                 onClose();
               }}
@@ -336,33 +359,26 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
         </div>
 
         {/* Ventana Principal */}
-        <div className="w-full bg-[#0a1120]/95 backdrop-blur-md border-2 border-[#ffb800]/60 rounded-2xl p-6 sm:p-8 shadow-[0_0_45px_rgba(255,184,0,0.15)] flex flex-col relative max-h-[78vh] overflow-y-auto">
+        <div className="w-full bg-[#0a1120]/95 backdrop-blur-md border-2 border-[#ffb800]/60 rounded-3xl p-7 sm:p-10 shadow-[0_0_50px_rgba(255,184,0,0.18)] flex flex-col relative max-h-[80vh] overflow-y-auto custom-scrollbar">
           
-          {/* SI NO HAY PÁGINAS EN LA BD PARA ESTA LECCIÓN */}
+          {/* SI NO HAY CONTENIDO */}
           {pasos.length === 0 && (
-            <div className="flex flex-col items-center text-center py-6">
-              <span className="text-3xl mb-3">📭</span>
-              <h3 className="text-base font-bold text-white uppercase tracking-wider mb-2">
-                "{leccion?.nombre}" no tiene páginas vinculadas en la BD
+            <div className="flex flex-col items-center text-center py-10">
+              <span className="text-4xl mb-3">⚡</span>
+              <h3 className="text-lg font-bold text-white uppercase tracking-wider mb-2">
+                Aún no hay contenido agregado
               </h3>
-              <p className="text-xs text-slate-400 font-sans max-w-md mb-4">
-                Se buscó en <code className="text-[#9fef00]">/api/paginas/</code> para la lección con ID <strong className="text-[#ffb800]">{leccion?.id}</strong> y no se encontraron páginas asociadas.
+              <p className="text-sm text-slate-400 font-sans max-w-sm mb-6">
+                Esta lección estará disponible próximamente.
               </p>
 
-              {debugInfo && (
-                <div className="w-full bg-[#050914] border border-slate-800 rounded-xl p-3 mb-5 text-left text-[11px] text-slate-400">
-                  <p>Total páginas recibidas de <code className="text-[#9fef00]">/api/paginas/</code>: <strong className="text-white">{debugInfo.totalPaginasEnAPI}</strong></p>
-                  {debugInfo.ejemploPaginaAPI && (
-                    <p className="mt-1 truncate">
-                      Campos en BD de página: <code className="text-[#ffb800]">{Object.keys(debugInfo.ejemploPaginaAPI).join(', ')}</code>
-                    </p>
-                  )}
-                </div>
-              )}
-
               <button
-                onClick={onClose}
-                className="px-6 py-2.5 bg-[#ffb800] hover:bg-[#e0a100] text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider cursor-pointer"
+                onMouseEnter={() => sfx.playHover()}
+                onClick={() => {
+                  sfx.playClick();
+                  onClose();
+                }}
+                className="px-7 py-3 bg-[#ffb800] hover:bg-[#e0a100] text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider cursor-pointer shadow-[0_0_15px_rgba(255,184,0,0.3)]"
               >
                 VOLVER AL MAPA
               </button>
@@ -372,44 +388,53 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
           {/* PASO TIPO TEORÍA */}
           {!finalizado && pasos.length > 0 && pasoActual?.tipo === 'teoria' && (
             <div className="flex flex-col">
-              <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-                <span className="text-[10px] text-[#9fef00] bg-[#112614] border border-[#9fef00]/40 px-3 py-1 rounded-md uppercase font-bold">
+              <div className="flex items-center justify-between mb-6 border-b border-slate-800/80 pb-3">
+                <span className="text-xs text-[#9fef00] bg-[#112614] border border-[#9fef00]/40 px-3.5 py-1 rounded-lg uppercase font-bold tracking-wider">
                   📖 PÁGINA {pasoActual.data.numero_pagina || pasoActual.ordenPagina} DE {totalPaginasCount}
                 </span>
-                <span className="text-[10px] text-[#ffb800] font-bold uppercase">
-                  PASO {pasoActualIdx + 1} DE {pasos.length}
-                </span>
+
+                {/* Botón de lectura de voz integrado */}
+                <button
+                  onClick={leerContenidoActual}
+                  onMouseEnter={() => sfx.playHover()}
+                  className="flex items-center gap-1.5 text-xs text-[#ffb800] bg-[#ffb800]/10 border border-[#ffb800]/40 hover:bg-[#ffb800]/20 px-3 py-1 rounded-lg uppercase font-bold transition cursor-pointer"
+                  title="Escuchar título y contenido"
+                >
+                  <span>🔊</span> Escuchar
+                </button>
               </div>
 
-              <h2 className="text-lg sm:text-xl font-bold text-white mb-4 leading-snug font-sans">
+              {/* Título de la Lección / Página */}
+              <h2 className="text-2xl sm:text-3xl font-black text-white mb-6 leading-tight font-sans tracking-tight">
                 {pasoActual.data.titulo || pasoActual.data.nombre || leccion.nombre}
               </h2>
 
-              <div className="space-y-4 bg-[#050914] border border-[#9fef00]/30 rounded-xl p-5 text-slate-200 text-sm leading-relaxed mb-6 font-sans shadow-inner">
+              {/* Bloque de Contenido */}
+              <div className="space-y-6 mb-8 font-sans">
                 {pasoActual.data.contenidos && pasoActual.data.contenidos.length > 0 ? (
                   pasoActual.data.contenidos.map((c, i) => (
-                    <p key={c.id || i} className="border-l-2 border-[#ffb800] pl-3 whitespace-pre-line">
+                    <p key={c.id || i} className="border-l-4 border-[#ffb800] pl-5 sm:pl-6 text-lg sm:text-xl text-slate-100 leading-relaxed font-normal tracking-wide">
                       {c.texto || c.contenido || c.descripcion}
                     </p>
                   ))
                 ) : (pasoActual.data.texto || pasoActual.data.contenido || pasoActual.data.descripcion) ? (
-                  <p className="border-l-2 border-[#ffb800] pl-3 whitespace-pre-line">
+                  <p className="border-l-4 border-[#ffb800] pl-5 sm:pl-6 text-lg sm:text-xl text-slate-100 leading-relaxed font-normal tracking-wide">
                     {pasoActual.data.texto || pasoActual.data.contenido || pasoActual.data.descripcion}
                   </p>
                 ) : (
-                  <p className="text-slate-400 italic text-xs">
-                    Esta página (ID: {pasoActual.data.id}) aún no tiene contenidos asociados en <code className="text-[#9fef00]">/api/contenidos/</code>.
+                  <p className="text-slate-400 italic text-base">
+                    Aún no hay contenido agregado en esta página.
                   </p>
                 )}
 
                 {pasoActual.data.imagenes && pasoActual.data.imagenes.length > 0 && (
-                  <div className="grid grid-cols-1 gap-3 pt-3">
+                  <div className="grid grid-cols-1 gap-4 pt-4">
                     {pasoActual.data.imagenes.map((img, i) => (
                       <img
                         key={img.id || i}
                         src={img.imagen || img.url}
                         alt={img.nombre || `Imagen página ${pasoActual.ordenPagina}`}
-                        className="w-full max-h-64 object-contain rounded-lg border border-slate-800 bg-[#0a1120] p-2"
+                        className="w-full max-h-80 object-contain rounded-2xl border border-slate-800 bg-[#050914] p-4 shadow-xl"
                       />
                     ))}
                   </div>
@@ -419,7 +444,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
               <button
                 onMouseEnter={() => sfx.playHover()}
                 onClick={avanzarAlSiguientePaso}
-                className="w-full py-3.5 bg-[#ffb800] hover:bg-[#e0a100] text-slate-950 font-black rounded-xl shadow-[0_0_20px_rgba(255,184,0,0.35)] transition text-xs uppercase cursor-pointer tracking-wider"
+                className="w-full py-4.5 bg-[#ffb800] hover:bg-[#e0a100] text-slate-950 font-black rounded-2xl shadow-[0_0_30px_rgba(255,184,0,0.4)] transition text-sm uppercase cursor-pointer tracking-wider"
               >
                 {siguientePaso?.tipo === 'pregunta'
                   ? `RESPONDER PREGUNTA DE PÁGINA ${pasoActual.ordenPagina} ⚡`
@@ -433,34 +458,35 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
           {/* PASO TIPO PREGUNTA */}
           {!finalizado && pasos.length > 0 && pasoActual?.tipo === 'pregunta' && (
             <div className="flex flex-col">
-              <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-                <span className="text-[10px] text-[#ffb800] bg-[#261f0c] border border-[#ffb800]/40 px-3 py-1 rounded-md uppercase font-bold">
+              <div className="flex items-center justify-between mb-6 border-b border-slate-800/80 pb-3">
+                <span className="text-xs text-[#ffb800] bg-[#261f0c] border border-[#ffb800]/40 px-3.5 py-1 rounded-lg uppercase font-bold tracking-wider">
                   🎯 PREGUNTA {pasoActual.ordenPregunta} DE {totalPreguntasCount} (PÁGINA {pasoActual.ordenPaginaAsociada})
                 </span>
-                <span className="text-[10px] text-[#9fef00] font-bold">+100 XP</span>
+                <span className="text-xs text-[#9fef00] font-bold tracking-wider">+100 XP</span>
               </div>
 
-              <h3 className="text-base sm:text-lg font-bold text-white mb-5 leading-snug font-sans">
+              {/* Título/Enunciado de la pregunta con letra un poco más pequeña (text-base sm:text-lg) */}
+              <h3 className="text-base sm:text-lg font-bold text-white mb-6 leading-snug font-sans tracking-wide">
                 {pasoActual.data.texto || pasoActual.data.enunciado || pasoActual.data.pregunta}
               </h3>
 
               {pasoActual.data.imagenes && pasoActual.data.imagenes.length > 0 && (
-                <div className="grid grid-cols-1 gap-3 mb-5">
+                <div className="grid grid-cols-1 gap-4 mb-6">
                   {pasoActual.data.imagenes.map((img, i) => (
                     <img
                       key={img.id || i}
                       src={img.imagen || img.url}
                       alt={img.nombre || `Diagrama pregunta ${pasoActual.ordenPregunta}`}
-                      className="w-full max-h-56 object-contain rounded-lg border border-slate-800 bg-[#050914] p-2"
+                      className="w-full max-h-64 object-contain rounded-2xl border border-slate-800 bg-[#050914] p-4 shadow-xl"
                     />
                   ))}
                 </div>
               )}
 
-              <div className="flex flex-col gap-3 mb-6">
+              <div className="flex flex-col gap-4 mb-7">
                 {pasoActual.data.opciones?.map((opcion, idx) => {
                   let estilosOpcion =
-                    'bg-[#07130b] border-[#9fef00]/40 text-slate-200 hover:border-[#ffb800] hover:bg-[#0d1f14]';
+                    'bg-[#07130b] border-[#9fef00]/40 text-slate-100 hover:border-[#ffb800] hover:bg-[#0d1f14]';
 
                   if (opcionSeleccionada !== null) {
                     if (opcion.es_correcta) {
@@ -480,29 +506,29 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
                       onMouseEnter={() => opcionSeleccionada === null && sfx.playHover()}
                       onClick={() => handleSeleccionarOpcion(opcion)}
                       disabled={opcionSeleccionada !== null}
-                      className={`w-full text-left p-4 rounded-xl border-2 text-xs sm:text-sm transition-all flex items-center justify-between gap-3 cursor-pointer ${estilosOpcion}`}
+                      className={`w-full text-left p-4 rounded-2xl border-2 text-sm sm:text-base transition-all flex items-center justify-between gap-4 cursor-pointer ${estilosOpcion}`}
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="w-6 h-6 rounded-md bg-[#050914] border border-current flex items-center justify-center text-[10px] font-bold shrink-0">
+                      <div className="flex items-center gap-4">
+                        <span className="w-7 h-7 rounded-xl bg-[#050914] border border-current flex items-center justify-center text-xs font-bold shrink-0">
                           {String.fromCharCode(65 + idx)}
                         </span>
-                        <span className="font-sans font-medium">{opcion.texto || opcion.opcion}</span>
+                        <span className="font-sans font-medium tracking-wide">{opcion.texto || opcion.opcion}</span>
                       </div>
                       {opcionSeleccionada !== null && opcion.es_correcta && (
-                        <span className="text-[#9fef00] font-bold text-base">✔</span>
+                        <span className="text-[#9fef00] font-bold text-lg">✔</span>
                       )}
                       {opcionSeleccionada !== null &&
                         opcion.id === opcionSeleccionada &&
-                        !opcion.es_correcta && <span className="text-rose-400 font-bold text-base">✕</span>}
+                        !opcion.es_correcta && <span className="text-rose-400 font-bold text-lg">✕</span>}
                     </button>
                   );
                 })}
               </div>
 
               {opcionSeleccionada !== null && (
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-4">
                   <div
-                    className={`p-3.5 rounded-xl text-xs font-bold flex items-center justify-between ${
+                    className={`p-4.5 rounded-2xl text-sm sm:text-base font-bold flex items-center justify-between ${
                       esCorrecta
                         ? 'bg-[#112614] text-[#9fef00] border border-[#9fef00]/50'
                         : 'bg-rose-950/90 text-rose-300 border border-rose-500/50'
@@ -519,7 +545,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
                   <button
                     onMouseEnter={() => sfx.playHover()}
                     onClick={avanzarAlSiguientePaso}
-                    className="w-full py-3.5 bg-[#9fef00] hover:bg-[#86cb00] text-slate-950 font-black rounded-xl shadow-[0_0_20px_rgba(159,239,0,0.35)] transition text-xs uppercase cursor-pointer tracking-wider"
+                    className="w-full py-4.5 bg-[#9fef00] hover:bg-[#86cb00] text-slate-950 font-black rounded-2xl shadow-[0_0_25px_rgba(159,239,0,0.4)] transition text-sm uppercase cursor-pointer tracking-wider"
                   >
                     {siguientePaso?.tipo === 'teoria'
                       ? `CONTINUAR A PÁGINA ${siguientePaso.ordenPagina} ➔`
@@ -534,44 +560,45 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
 
           {/* PANTALLA FINAL: RESULTADO */}
           {finalizado && (
-            <div className="flex flex-col items-center text-center py-6">
+            <div className="flex flex-col items-center text-center py-8">
               <div className="w-20 h-20 rounded-2xl bg-[#112614] border-2 border-[#9fef00] mb-4 shadow-[0_0_30px_rgba(159,239,0,0.4)] flex items-center justify-center text-4xl">
                 ⚡
               </div>
-              <span className="text-[10px] text-[#9fef00] bg-[#112614] border border-[#9fef00]/40 px-3 py-0.5 rounded-full uppercase font-bold mb-2">
+              <span className="text-xs text-[#9fef00] bg-[#112614] border border-[#9fef00]/40 px-3.5 py-1 rounded-full uppercase font-bold mb-3 tracking-wider">
                 CERTIFICACIÓN DE MÓDULO ACTUALIZADA
               </span>
-              <h2 className="text-2xl font-black text-white mb-2">¡MÓDULO DOMINADO!</h2>
-              <p className="text-xs text-slate-300 mb-6 font-sans max-w-md">
+              <h2 className="text-3xl font-black text-white mb-3 font-sans">¡MÓDULO DOMINADO!</h2>
+              <p className="text-base text-slate-300 mb-8 font-sans max-w-md leading-relaxed">
                 Has completado todas las páginas y verificaciones técnicas de{' '}
                 <strong className="text-[#ffb800]">{leccion.nombre}</strong>.
               </p>
 
-              <div className="grid grid-cols-3 gap-3 mb-8 w-full max-w-md">
-                <div className="bg-[#050914] border border-[#9fef00]/40 p-3 rounded-xl flex flex-col items-center">
-                  <span className="text-[9px] text-[#9fef00]">PÁGINAS LEÍDAS</span>
-                  <span className="text-lg font-bold text-white mt-1">{totalPaginasCount}</span>
+              <div className="grid grid-cols-3 gap-4 mb-8 w-full max-w-md">
+                <div className="bg-[#050914] border border-[#9fef00]/40 p-4 rounded-2xl flex flex-col items-center">
+                  <span className="text-[11px] text-[#9fef00] font-bold">PÁGINAS LEÍDAS</span>
+                  <span className="text-xl font-bold text-white mt-1">{totalPaginasCount}</span>
                 </div>
-                <div className="bg-[#050914] border border-[#ffb800]/40 p-3 rounded-xl flex flex-col items-center">
-                  <span className="text-[9px] text-[#ffb800]">ACIERTOS</span>
-                  <span className="text-lg font-bold text-white mt-1">
+                <div className="bg-[#050914] border border-[#9fef00]/40 p-4 rounded-2xl flex flex-col items-center">
+                  <span className="text-[11px] text-[#9fef00] font-bold">ACIERTOS</span>
+                  <span className="text-xl font-bold text-white mt-1">
                     {aciertos} / {totalPreguntasCount}
                   </span>
                 </div>
-                <div className="bg-[#050914] border border-rose-500/40 p-3 rounded-xl flex flex-col items-center">
-                  <span className="text-[9px] text-rose-400">ENERGÍA</span>
-                  <span className="text-lg font-bold text-white mt-1">{vidas} ❤️</span>
+                <div className="bg-[#050914] border border-rose-500/40 p-4 rounded-2xl flex flex-col items-center">
+                  <span className="text-[11px] text-rose-400 font-bold">ENERGÍA</span>
+                  <span className="text-xl font-bold text-white mt-1">{vidas} ❤️</span>
                 </div>
               </div>
 
               <button
                 onMouseEnter={() => sfx.playHover()}
                 onClick={() => {
+                  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
                   sfx.playClick();
                   if (onCompletar) onCompletar(leccion);
                   onClose();
                 }}
-                className="w-full py-4 bg-gradient-to-r from-[#ffb800] to-[#9fef00] hover:opacity-95 text-slate-950 font-black rounded-xl shadow-[0_0_25px_rgba(255,184,0,0.4)] transition text-xs uppercase cursor-pointer tracking-wider"
+                className="w-full py-4.5 bg-gradient-to-r from-[#ffb800] to-[#9fef00] hover:opacity-95 text-slate-950 font-black rounded-2xl shadow-[0_0_30px_rgba(255,184,0,0.4)] transition text-sm uppercase cursor-pointer tracking-wider"
               >
                 GUARDAR PROGRESO Y VOLVER AL MAPA ⚡
               </button>

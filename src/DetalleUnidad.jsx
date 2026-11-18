@@ -183,7 +183,6 @@ export default function DetalleUnidad({
   unidad,
   usuarioId,
   onVolver,
-  onIrCalculadora,
   onLogout,
   onSelectLeccion
 }) {
@@ -235,25 +234,14 @@ export default function DetalleUnidad({
           })
           .sort((a, b) => (a.numero_leccion || a.orden || 0) - (b.numero_leccion || b.orden || 0));
 
-        const finales = filtradas.length > 0 ? filtradas : [
-          { id: 1001, numero_leccion: 1, nombre: 'Fundamentos de Acometidas', descripcion: 'Análisis técnico y exigencias de empalmes domiciliarios SEC.' },
-          { id: 1002, numero_leccion: 2, nombre: 'Empalmes Monofásicos', descripcion: 'Configuración de protecciones y medidores de energía.' },
-          { id: 1003, numero_leccion: 3, nombre: 'Protecciones y Cortes', descripcion: 'Protocolos normativos sobre tableros generales.' }
-        ];
-        setLecciones(finales);
-        if (finales.length > 0) {
-          setLeccionesCompletadasIds([finales[0].id]);
+        setLecciones(filtradas);
+        if (filtradas.length > 0) {
+          setLeccionesCompletadasIds([filtradas[0].id]);
         }
         setCargando(false);
       })
       .catch(() => {
-        const respaldo = [
-          { id: 1001, numero_leccion: 1, nombre: 'Fundamentos de Acometidas', descripcion: 'Análisis técnico y exigencias de empalmes domiciliarios SEC.' },
-          { id: 1002, numero_leccion: 2, nombre: 'Empalmes Monofásicos', descripcion: 'Configuración de protecciones y medidores de energía.' },
-          { id: 1003, numero_leccion: 3, nombre: 'Protecciones y Cortes', descripcion: 'Protocolos normativos sobre tableros generales.' }
-        ];
-        setLecciones(respaldo);
-        setLeccionesCompletadasIds([1001]);
+        setLecciones([]);
         setCargando(false);
       });
   }, [unidad]);
@@ -287,41 +275,17 @@ export default function DetalleUnidad({
       <Particles id="tsparticles-mapa-htb" init={particlesInit} options={particlesOptions} className="absolute inset-0 pointer-events-none z-1" />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#9fef0008_1px,transparent_1px),linear-gradient(to_bottom,#9fef0008_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none z-1" />
 
-      {/* Menú Global Unificado */}
+      {/* Menú Superior Limpio (Sin botones centrales de navegación ni título de lección) */}
       <header className="sticky top-0 z-40 bg-[#080d1a]/95 backdrop-blur-xl border-b border-[#9fef00]/30 px-6 py-3.5 shadow-[0_0_20px_rgba(159,239,0,0.1)]">
         <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
-          <div className="flex items-center space-x-6">
-            <div onClick={onVolver} className="flex items-center space-x-3 cursor-pointer group">
-              <img src={logoImg} alt="AreaElectrica Logo" className="w-9 h-9 object-contain rounded-xl group-hover:scale-105 transition border border-[#9fef00]/40" />
-              <div className="flex flex-col">
-                <span className="text-sm font-black tracking-wider text-white uppercase">
-                  AREA<span className="text-[#9fef00]">ELECTRICA</span> <span className="text-[#ffb800] text-[10px]">MAPA</span>
-                </span>
-                <span className="text-[9px] text-slate-400 tracking-widest">RUTA DE ENTRENAMIENTO SEC</span>
-              </div>
-            </div>
-
-            <nav className="hidden md:flex items-center space-x-2 text-xs">
-              <button
-                onMouseEnter={() => sfx.playHover()}
-                onClick={onVolver}
-                className="px-3.5 py-1.5 rounded-xl font-bold text-slate-300 hover:text-[#9fef00] bg-[#0d1527]/70 hover:bg-[#0d1527] border border-slate-800 hover:border-[#9fef00]/40 transition cursor-pointer"
-              >
-                ⚡ PANEL DE ESTUDIO
-              </button>
-              <span className="px-3.5 py-1.5 rounded-xl font-bold bg-[#261f0c] text-[#ffb800] border border-[#ffb800]/50 shadow-[0_0_12px_rgba(255,184,0,0.15)]">
-                🗺️ {unidad?.nombre || 'MAPA DE UNIDAD'}
+          <div className="flex items-center space-x-3">
+            <img src={logoImg} alt="AreaElectrica Logo" className="w-9 h-9 object-contain rounded-xl border border-[#9fef00]/40" />
+            <div className="flex flex-col">
+              <span className="text-sm font-black tracking-wider text-white uppercase">
+                AREA<span className="text-[#9fef00]">ELECTRICA</span> <span className="text-[#ffb800] text-[10px]">MAPA</span>
               </span>
-              {onIrCalculadora && (
-                <button
-                  onMouseEnter={() => sfx.playHover()}
-                  onClick={onIrCalculadora}
-                  className="px-3.5 py-1.5 rounded-xl font-bold text-slate-300 hover:text-[#ffb800] bg-[#0d1527]/70 hover:bg-[#0d1527] border border-slate-800 hover:border-[#ffb800]/40 transition cursor-pointer"
-                >
-                  📊 CALCULADORA RIC
-                </button>
-              )}
-            </nav>
+              <span className="text-[9px] text-slate-400 tracking-widest">RUTA DE ENTRENAMIENTO SEC</span>
+            </div>
           </div>
 
           <div className="flex items-center space-x-2.5">
@@ -342,13 +306,15 @@ export default function DetalleUnidad({
               <span className="w-2 h-2 rounded-full bg-[#9fef00]" />
               <span className="font-bold text-[#ffb800]">{displayUser}</span>
             </div>
+            
             <button
               onMouseEnter={() => sfx.playHover()}
               onClick={onVolver}
-              className="bg-[#112614] hover:bg-[#9fef00] text-[#9fef00] hover:text-slate-950 border border-[#9fef00]/50 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-md"
+              className="bg-[#112614] hover:bg-[#9fef00] text-[#9fef00] hover:text-slate-950 border border-[#9fef00]/50 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-md flex items-center gap-1.5"
             >
-              ◀ VOLVER AL PANEL
+              <span>◀</span> VOLVER AL PANEL
             </button>
+            
             {onLogout && (
               <button
                 onMouseEnter={() => sfx.playHover()}
@@ -372,9 +338,7 @@ export default function DetalleUnidad({
             <span className="text-xs font-black text-[#ffb800] uppercase tracking-wider block">
               {unidad?.nombre || 'UNIDAD NORMATIVA SEC'}
             </span>
-            <span className="text-[10px] text-slate-400">
-              ESTADO: <span className="text-[#9fef00] font-bold">ACCESO HABILITADO</span> • {lecciones.length} MÓDULOS TÉCNICOS
-            </span>
+           
           </div>
 
           <div className="flex items-center gap-2 text-[11px]">
@@ -389,10 +353,7 @@ export default function DetalleUnidad({
                 📄 PLIEGO PDF
               </a>
             )}
-            <div className="flex items-center gap-1.5 text-[#ffb800] bg-[#261f0c] border border-[#ffb800]/40 px-3 py-1 rounded-lg shadow-inner font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ffb800] animate-ping" />
-              <span>ALTA TENSIÓN</span>
-            </div>
+       
           </div>
         </div>
 
@@ -438,6 +399,16 @@ export default function DetalleUnidad({
           <div className="text-[#9fef00] font-mono text-xs animate-pulse my-auto flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-2 border-[#9fef00] border-t-transparent rounded-full animate-spin" />
             <span>CARGANDO MAPA ELÉCTRICO...</span>
+          </div>
+        ) : lecciones.length === 0 ? (
+          <div className="my-auto bg-[#0a1120]/95 border border-[#ffb800]/40 rounded-2xl p-8 text-center max-w-md shadow-xl">
+            <span className="text-3xl block mb-3">⚡</span>
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-1">
+              Sin lecciones registradas
+            </h3>
+            <p className="text-xs text-slate-400 font-sans">
+              Esta unidad aún no tiene lecciones cargadas en la base de datos.
+            </p>
           </div>
         ) : (
           <div className="relative w-full max-w-lg" style={{ height: `${alturaTotal}px` }}>

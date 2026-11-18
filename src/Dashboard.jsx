@@ -150,20 +150,8 @@ export default function Dashboard({ user, onLogout }) {
 
             {/* Menú Global Persistente */}
             <nav className="hidden md:flex items-center space-x-2 text-xs">
-              <button
-                onMouseEnter={() => sfx.playHover()}
-                onClick={handleIrPanel}
-                className="px-3.5 py-1.5 rounded-xl font-bold bg-[#112614] text-[#9fef00] border border-[#9fef00]/50 shadow-[0_0_12px_rgba(159,239,0,0.15)] cursor-pointer"
-              >
-                ⚡ PANEL DE ESTUDIO
-              </button>
-              <button
-                onMouseEnter={() => sfx.playHover()}
-                onClick={handleIrCalculadora}
-                className="px-3.5 py-1.5 rounded-xl font-bold text-slate-300 hover:text-[#ffb800] bg-[#0d1527]/70 hover:bg-[#0d1527] border border-slate-800 hover:border-[#ffb800]/40 transition cursor-pointer"
-              >
-                📊 CALCULADORA RIC
-              </button>
+            
+           
             </nav>
           </div>
 
@@ -183,24 +171,8 @@ export default function Dashboard({ user, onLogout }) {
             </button>
 
             {/* Badge del Usuario Conectado */}
-            <div className="flex items-center space-x-2 bg-[#0d1527] border border-[#ffb800]/40 px-3 py-1 rounded-lg text-xs text-white shadow-inner">
-              <span className="w-2 h-2 rounded-full bg-[#9fef00]" />
-              <span className="text-slate-400 hidden sm:inline">OPERADOR:</span>
-              <span className="font-bold text-[#ffb800]">{nombreUsuario}</span>
-            </div>
+  
 
-            <div className="hidden sm:flex items-center space-x-1.5 bg-[#0d1527] border border-[#9fef00]/40 px-3 py-1 rounded-lg text-xs text-[#9fef00] shadow-inner">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#9fef00] animate-ping" />
-              <span>RACHA: 5D</span>
-            </div>
-            <div className="hidden lg:flex items-center space-x-1.5 bg-[#0d1527] border border-amber-500/40 px-3 py-1 rounded-lg text-xs text-amber-400 shadow-inner">
-              <span>🪙</span>
-              <span>150 NC</span>
-            </div>
-            <div className="hidden lg:flex items-center space-x-1.5 bg-[#0d1527] border border-rose-500/40 px-3 py-1 rounded-lg text-xs text-rose-400 shadow-inner">
-              <span>❤️</span>
-              <span>5 HP</span>
-            </div>
             <button 
               onMouseEnter={() => sfx.playHover()}
               onClick={() => {
@@ -210,7 +182,7 @@ export default function Dashboard({ user, onLogout }) {
               className="px-3 h-8 rounded-xl bg-[#0d1527] hover:bg-rose-950/60 border border-slate-700 hover:border-rose-500/60 flex items-center justify-center text-slate-300 hover:text-rose-400 text-xs font-bold transition-all cursor-pointer"
               title="Cerrar Sesión"
             >
-              SALIR ⌁
+              SALIR
             </button>
           </div>
         </div>
