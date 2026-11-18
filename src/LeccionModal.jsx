@@ -5,15 +5,22 @@ import { sfx } from './soundEffects';
 
 const API_BASE_URL = 'https://backelec1-production.up.railway.app/api';
 
+// Extrae el ID de una llave foránea sin importar cómo la serialice Django
+const extraerId = (valor) => {
+  if (valor === null || valor === undefined) return null;
+  if (typeof valor === 'object') return valor.id ?? valor.pk ?? null;
+  return valor;
+};
+
 export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCompletar }) {
-  const [paginas, setPaginas] = useState([]);
-  const [preguntas, setPreguntas] = useState([]);
+  const [pasos, setPasos] = useState([]);
+  const [pasoActualIdx, setPasoActualIdx] = useState(0);
+  const [totalPaginasCount, setTotalPaginasCount] = useState(0);
+  const [totalPreguntasCount, setTotalPreguntasCount] = useState(0);
   const [cargando, setCargando] = useState(true);
+  const [debugInfo, setDebugInfo] = useState(null);
 
-  const [fase, setFase] = useState('teoria');
-  const [paginaActualIdx, setPaginaActualIdx] = useState(0);
-  const [preguntaActualIdx, setPreguntaActualIdx] = useState(0);
-
+  const [finalizado, setFinalizado] = useState(false);
   const [opcionSeleccionada, setOpcionSeleccionada] = useState(null);
   const [esCorrecta, setEsCorrecta] = useState(null);
   const [aciertos, setAciertos] = useState(0);
@@ -23,15 +30,18 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
     if (!leccion) return;
     setCargando(true);
 
-    const cargarDatosLeccion = async () => {
+    const cargarDatosReales = async () => {
       try {
+        const token = localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
         const [resPaginas, resContenidos, resImgPaginas, resPreguntas, resOpciones, resImgPreguntas] = await Promise.all([
-          fetch(`${API_BASE_URL}/paginas/?leccion=${leccion.id}`).then(r => r.json()).catch(() => []),
-          fetch(`${API_BASE_URL}/contenidos/`).then(r => r.json()).catch(() => []),
-          fetch(`${API_BASE_URL}/imagenes-pagina/`).then(r => r.json()).catch(() => []),
-          fetch(`${API_BASE_URL}/preguntas/`).then(r => r.json()).catch(() => []),
-          fetch(`${API_BASE_URL}/opciones/`).then(r => r.json()).catch(() => []),
-          fetch(`${API_BASE_URL}/imagenes-pregunta/`).then(r => r.json()).catch(() => [])
+          fetch(`${API_BASE_URL}/paginas/?leccion=${leccion.id}`, { cache: 'no-store', headers }).then(r => r.json()).catch(() => []),
+          fetch(`${API_BASE_URL}/contenidos/`, { cache: 'no-store', headers }).then(r => r.json()).catch(() => []),
+          fetch(`${API_BASE_URL}/imagenes-pagina/`, { cache: 'no-store', headers }).then(r => r.json()).catch(() => []),
+          fetch(`${API_BASE_URL}/preguntas/`, { cache: 'no-store', headers }).then(r => r.json()).catch(() => []),
+          fetch(`${API_BASE_URL}/opciones/`, { cache: 'no-store', headers }).then(r => r.json()).catch(() => []),
+          fetch(`${API_BASE_URL}/imagenes-pregunta/`, { cache: 'no-store', headers }).then(r => r.json()).catch(() => [])
         ]);
 
         const rawPaginas = Array.isArray(resPaginas) ? resPaginas : (resPaginas.results || []);
@@ -41,78 +51,176 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
         const rawOpciones = Array.isArray(resOpciones) ? resOpciones : (resOpciones.results || []);
         const rawImgPreguntas = Array.isArray(resImgPreguntas) ? resImgPreguntas : (resImgPreguntas.results || []);
 
-        const paginasLeccion = rawPaginas
-          .filter(p => Number(p.leccion) === Number(leccion.id))
-          .sort((a, b) => (a.numero_pagina || 0) - (b.numero_pagina || 0))
-          .map(p => ({
-            ...p,
-            contenidos: p.contenidos || rawContenidos
-              .filter(c => c.pagina_leccion === p.id)
-              .sort((a, b) => (a.numero_contenido_pagina || 0) - (b.numero_contenido_pagina || 0)),
-            imagenes: p.imagenes || rawImgPaginas
-              .filter(img => img.pagina_leccion === p.id)
-              .sort((a, b) => (a.numero_imagen_pagina || 0) - (b.numero_imagen_pagina || 0))
-          }));
+        // 1. Filtrar SOLO las páginas reales de esta lección desde la BD
+        const paginasBase = Array.isArray(leccion.paginas) && leccion.paginas.length > 0
+          ? leccion.paginas
+          : rawPaginas.filter(p => {
+              const fkLeccion = extraerId(p.leccion ?? p.leccion_id ?? p.id_leccion ?? p.lecciones);
+              return Number(fkLeccion) === Number(leccion.id);
+            });
 
-        const idsPaginas = paginasLeccion.map(p => p.id);
+        const paginasLeccion = paginasBase
+          .sort((a, b) => (a.numero_pagina || a.orden || a.id || 0) - (b.numero_pagina || b.orden || b.id || 0))
+          .map(p => {
+            const contenidosDePagina = Array.isArray(p.contenidos) && p.contenidos.length > 0
+              ? p.contenidos
+              : rawContenidos.filter(c => {
+                  const fkPag = extraerId(c.pagina_leccion ?? c.pagina_leccion_id ?? c.pagina ?? c.pagina_id ?? c.id_pagina);
+                  return Number(fkPag) === Number(p.id);
+                });
 
+            const imagenesDePagina = Array.isArray(p.imagenes) && p.imagenes.length > 0
+              ? p.imagenes
+              : rawImgPaginas.filter(img => {
+                  const fkPag = extraerId(img.pagina_leccion ?? img.pagina_leccion_id ?? img.pagina ?? img.pagina_id);
+                  return Number(fkPag) === Number(p.id);
+                });
+
+            return {
+              ...p,
+              contenidos: contenidosDePagina.sort(
+                (a, b) => (a.numero_contenido_pagina || a.orden || a.id || 0) - (b.numero_contenido_pagina || b.orden || b.id || 0)
+              ),
+              imagenes: imagenesDePagina.sort(
+                (a, b) => (a.numero_imagen_pagina || a.orden || a.id || 0) - (b.numero_imagen_pagina || b.orden || b.id || 0)
+              )
+            };
+          });
+
+        const idsPaginas = paginasLeccion.map(p => Number(p.id));
+
+        // 2. Filtrar SOLO las preguntas reales de esta lección/páginas desde la BD
         const preguntasLeccion = rawPreguntas
-          .filter(q => idsPaginas.includes(q.pagina_leccion) || Number(q.leccion) === Number(leccion.id))
-          .sort((a, b) => (a.numero_pregunta || 0) - (b.numero_pregunta || 0))
-          .map(q => ({
-            ...q,
-            opciones: q.opciones || rawOpciones.filter(op => op.pregunta === q.id),
-            imagenes: q.imagenes || rawImgPreguntas
-              .filter(img => img.pregunta === q.id)
-              .sort((a, b) => (a.numero_imagen_pregunta || 0) - (b.numero_imagen_pregunta || 0))
-          }));
+          .filter(q => {
+            const fkPag = extraerId(q.pagina_leccion ?? q.pagina_leccion_id ?? q.pagina ?? q.pagina_id);
+            const fkLec = extraerId(q.leccion ?? q.leccion_id ?? q.id_leccion);
+            return (fkPag !== null && idsPaginas.includes(Number(fkPag))) ||
+                   (fkLec !== null && Number(fkLec) === Number(leccion.id));
+          })
+          .sort((a, b) => (a.numero_pregunta || a.orden || a.id || 0) - (b.numero_pregunta || b.orden || b.id || 0))
+          .map(q => {
+            const opcionesDePregunta = Array.isArray(q.opciones) && q.opciones.length > 0
+              ? q.opciones
+              : rawOpciones.filter(op => {
+                  const fkPreg = extraerId(op.pregunta ?? op.pregunta_id ?? op.id_pregunta);
+                  return Number(fkPreg) === Number(q.id);
+                });
 
-        setPaginas(paginasLeccion.length > 0 ? paginasLeccion : [
-          {
-            id: 1,
-            numero_pagina: 1,
-            contenidos: [
-              { id: 1, numero_contenido_pagina: 1, texto: `Protocolo técnico del módulo "${leccion.nombre}". Todo empalme y tablero eléctrico debe dimensionarse verificando capacidad térmica y caída de tensión según los Pliegos Técnicos Normativos RIC vigentes.` },
-              { id: 2, numero_contenido_pagina: 2, texto: 'Inspecciona siempre la selectividad de las protecciones termomagnéticas y diferenciales antes de energizar el circuito.' }
-            ],
-            imagenes: []
-          }
-        ]);
+            const imagenesDePregunta = Array.isArray(q.imagenes) && q.imagenes.length > 0
+              ? q.imagenes
+              : rawImgPreguntas.filter(img => {
+                  const fkPreg = extraerId(img.pregunta ?? img.pregunta_id ?? img.id_pregunta);
+                  return Number(fkPreg) === Number(q.id);
+                });
 
-        setPreguntas(preguntasLeccion.length > 0 ? preguntasLeccion : [
-          {
-            id: 1,
-            numero_pregunta: 1,
-            texto: `¿Cuál es la exigencia prioritaria al ejecutar e inspeccionar "${leccion.nombre}" bajo normativa SEC?`,
-            opciones: [
-              { id: 1, texto: 'Cumplir los parámetros del Pliego Técnico RIC correspondiente y verificar protecciones.', es_correcta: true },
-              { id: 2, texto: 'Energizar directamente sin medir aislamiento ni continuidad.', es_correcta: false },
-              { id: 3, texto: 'Utilizar conductores de sección inferior a la mínima reglamentaria.', es_correcta: false }
-            ],
-            imagenes: []
+            return {
+              ...q,
+              opciones: opcionesDePregunta,
+              imagenes: imagenesDePregunta.sort(
+                (a, b) => (a.numero_imagen_pregunta || a.orden || a.id || 0) - (b.numero_imagen_pregunta || b.orden || b.id || 0)
+              )
+            };
+          });
+
+        // Guardar resumen técnico por si la lección aún no tiene páginas vinculadas
+        setDebugInfo({
+          leccionIdBuscada: leccion.id,
+          totalPaginasEnAPI: rawPaginas.length,
+          ejemploPaginaAPI: rawPaginas[0] || null
+        });
+
+        // 3. Construir la secuencia intercalada SOLO con datos reales: [Página 1, Pregunta(s) Pág 1, Página 2, Pregunta(s) Pág 2]
+        const secuenciaIntercalada = [];
+        const preguntasUsadasIds = new Set();
+        let contadorPag = 0;
+        let contadorPreg = 0;
+
+        paginasLeccion.forEach((pagina, idx) => {
+          contadorPag += 1;
+          secuenciaIntercalada.push({
+            tipo: 'teoria',
+            ordenPagina: contadorPag,
+            data: pagina
+          });
+
+          const preguntasDeEstaPagina = Array.isArray(pagina.preguntas) && pagina.preguntas.length > 0
+            ? pagina.preguntas
+            : preguntasLeccion.filter(q => {
+                const fkPag = extraerId(q.pagina_leccion ?? q.pagina_leccion_id ?? q.pagina ?? q.pagina_id);
+                return Number(fkPag) === Number(pagina.id);
+              });
+
+          if (preguntasDeEstaPagina.length > 0) {
+            preguntasDeEstaPagina.forEach(preg => {
+              if (!preguntasUsadasIds.has(preg.id)) {
+                preguntasUsadasIds.add(preg.id);
+                contadorPreg += 1;
+                secuenciaIntercalada.push({
+                  tipo: 'pregunta',
+                  ordenPregunta: contadorPreg,
+                  ordenPaginaAsociada: contadorPag,
+                  data: preg
+                });
+              }
+            });
+          } else {
+            const preguntaPorIndice = preguntasLeccion[idx];
+            if (preguntaPorIndice && !preguntasUsadasIds.has(preguntaPorIndice.id)) {
+              preguntasUsadasIds.add(preguntaPorIndice.id);
+              contadorPreg += 1;
+              secuenciaIntercalada.push({
+                tipo: 'pregunta',
+                ordenPregunta: contadorPreg,
+                ordenPaginaAsociada: contadorPag,
+                data: preguntaPorIndice
+              });
+            }
           }
-        ]);
+        });
+
+        preguntasLeccion.forEach(preg => {
+          if (!preguntasUsadasIds.has(preg.id)) {
+            preguntasUsadasIds.add(preg.id);
+            contadorPreg += 1;
+            secuenciaIntercalada.push({
+              tipo: 'pregunta',
+              ordenPregunta: contadorPreg,
+              ordenPaginaAsociada: contadorPag || 1,
+              data: preg
+            });
+          }
+        });
+
+        setTotalPaginasCount(paginasLeccion.length);
+        setTotalPreguntasCount(contadorPreg);
+        setPasos(secuenciaIntercalada);
       } catch (error) {
-        console.warn('Error cargando datos de la lección, usando respaldo:', error);
+        console.error('Error cargando datos de la BD:', error);
+        setPasos([]);
       } finally {
         setCargando(false);
       }
     };
 
-    cargarDatosLeccion();
+    cargarDatosReales();
   }, [leccion]);
 
-  const handleSiguientePagina = () => {
-    if (paginaActualIdx < paginas.length - 1) {
-      sfx.playClick();
-      setPaginaActualIdx(prev => prev + 1);
-    } else if (preguntas.length > 0) {
-      sfx.playOpenNode();
-      setFase('preguntas');
+  const avanzarAlSiguientePaso = () => {
+    setOpcionSeleccionada(null);
+    setEsCorrecta(null);
+
+    if (pasoActualIdx < pasos.length - 1) {
+      const siguientePaso = pasos[pasoActualIdx + 1];
+      if (siguientePaso?.tipo === 'pregunta') {
+        sfx.playOpenNode();
+      } else {
+        sfx.playClick();
+      }
+      setPasoActualIdx(prev => prev + 1);
     } else {
       sfx.playComplete();
       registrarProgreso();
-      setFase('resultado');
+      setFinalizado(true);
     }
   };
 
@@ -128,19 +236,6 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
     } else {
       sfx.playError();
       setVidas(prev => Math.max(0, prev - 1));
-    }
-  };
-
-  const handleSiguientePregunta = () => {
-    setOpcionSeleccionada(null);
-    setEsCorrecta(null);
-    if (preguntaActualIdx < preguntas.length - 1) {
-      sfx.playClick();
-      setPreguntaActualIdx(prev => prev + 1);
-    } else {
-      sfx.playComplete();
-      registrarProgreso();
-      setFase('resultado');
     }
   };
 
@@ -167,28 +262,23 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
         <div className="fixed inset-0 bg-[#050914]/70 pointer-events-none z-0" />
         <div className="w-9 h-9 border-2 border-[#ffb800] border-t-transparent rounded-full animate-spin relative z-10" />
         <span className="text-xs tracking-widest animate-pulse relative z-10 uppercase">
-          Cargando Módulo Normativo SEC...
+          Cargando desde Railway...
         </span>
       </div>
     );
   }
 
-  const paginaActual = paginas[paginaActualIdx];
-  const preguntaActual = preguntas[preguntaActualIdx];
-  const totalPasosTeoria = paginas.length;
-  const totalPreguntas = preguntas.length;
-
-  const progresoPorcentaje =
-    fase === 'teoria'
-      ? ((paginaActualIdx + 1) / Math.max(1, totalPasosTeoria)) * 100
-      : fase === 'preguntas'
-      ? ((preguntaActualIdx + 1) / Math.max(1, totalPreguntas)) * 100
-      : 100;
+  const pasoActual = pasos[pasoActualIdx];
+  const siguientePaso = pasos[pasoActualIdx + 1];
+  const progresoPorcentaje = pasos.length === 0
+    ? 0
+    : finalizado
+    ? 100
+    : ((pasoActualIdx + 1) / pasos.length) * 100;
 
   return (
     <div className="fixed inset-0 z-50 bg-[#050914] flex flex-col items-center justify-center p-4 sm:p-6 overflow-y-auto select-none font-mono">
       
-      {/* Fondo con wall_mapa.jpeg */}
       <div 
         className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none z-0 opacity-75 contrast-110"
         style={{ backgroundImage: `url(${wallMapa})` }}
@@ -197,7 +287,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
 
       <div className="w-full max-w-2xl my-auto flex flex-col gap-4 relative z-10">
         
-        {/* HUD Superior del Modal con Logo AREAELECTRICA */}
+        {/* HUD Superior */}
         <div className="w-full bg-[#0a1120]/95 backdrop-blur-md border border-[#ffb800]/40 rounded-2xl p-3.5 flex items-center justify-between gap-4 shadow-[0_0_25px_rgba(0,0,0,0.8)]">
           <div className="flex items-center gap-2.5">
             <img src={logoImg} alt="AreaElectrica" className="w-8 h-8 object-contain rounded-lg border border-[#9fef00]/40" />
@@ -209,7 +299,13 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
           <div className="flex-1 flex flex-col gap-1">
             <div className="flex justify-between text-[10px] text-slate-300 font-bold">
               <span>
-                {fase === 'teoria' ? 'FASE 1: LECTURA TÉCNICA' : fase === 'preguntas' ? 'FASE 2: EVALUACIÓN DE CAMPO' : 'MÓDULO COMPLETADO'}
+                {pasos.length === 0
+                  ? 'SIN REGISTROS EN BD'
+                  : finalizado
+                  ? 'MÓDULO COMPLETADO'
+                  : pasoActual?.tipo === 'teoria'
+                  ? `TEORÍA • PÁGINA ${pasoActual.ordenPagina} DE ${totalPaginasCount}`
+                  : `EVALUACIÓN • PREGUNTA ${pasoActual?.ordenPregunta} DE ${totalPreguntasCount}`}
               </span>
               <span className="text-[#9fef00]">{Math.round(progresoPorcentaje)}%</span>
             </div>
@@ -239,45 +335,80 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
           </div>
         </div>
 
-        {/* Ventana Principal Estilo HTB */}
+        {/* Ventana Principal */}
         <div className="w-full bg-[#0a1120]/95 backdrop-blur-md border-2 border-[#ffb800]/60 rounded-2xl p-6 sm:p-8 shadow-[0_0_45px_rgba(255,184,0,0.15)] flex flex-col relative max-h-[78vh] overflow-y-auto">
           
-          {/* FASE 1: TEORÍA */}
-          {fase === 'teoria' && paginaActual && (
+          {/* SI NO HAY PÁGINAS EN LA BD PARA ESTA LECCIÓN */}
+          {pasos.length === 0 && (
+            <div className="flex flex-col items-center text-center py-6">
+              <span className="text-3xl mb-3">📭</span>
+              <h3 className="text-base font-bold text-white uppercase tracking-wider mb-2">
+                "{leccion?.nombre}" no tiene páginas vinculadas en la BD
+              </h3>
+              <p className="text-xs text-slate-400 font-sans max-w-md mb-4">
+                Se buscó en <code className="text-[#9fef00]">/api/paginas/</code> para la lección con ID <strong className="text-[#ffb800]">{leccion?.id}</strong> y no se encontraron páginas asociadas.
+              </p>
+
+              {debugInfo && (
+                <div className="w-full bg-[#050914] border border-slate-800 rounded-xl p-3 mb-5 text-left text-[11px] text-slate-400">
+                  <p>Total páginas recibidas de <code className="text-[#9fef00]">/api/paginas/</code>: <strong className="text-white">{debugInfo.totalPaginasEnAPI}</strong></p>
+                  {debugInfo.ejemploPaginaAPI && (
+                    <p className="mt-1 truncate">
+                      Campos en BD de página: <code className="text-[#ffb800]">{Object.keys(debugInfo.ejemploPaginaAPI).join(', ')}</code>
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <button
+                onClick={onClose}
+                className="px-6 py-2.5 bg-[#ffb800] hover:bg-[#e0a100] text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider cursor-pointer"
+              >
+                VOLVER AL MAPA
+              </button>
+            </div>
+          )}
+
+          {/* PASO TIPO TEORÍA */}
+          {!finalizado && pasos.length > 0 && pasoActual?.tipo === 'teoria' && (
             <div className="flex flex-col">
               <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
                 <span className="text-[10px] text-[#9fef00] bg-[#112614] border border-[#9fef00]/40 px-3 py-1 rounded-md uppercase font-bold">
-                  📖 PÁGINA {paginaActual.numero_pagina || paginaActualIdx + 1} DE {totalPasosTeoria}
+                  📖 PÁGINA {pasoActual.data.numero_pagina || pasoActual.ordenPagina} DE {totalPaginasCount}
                 </span>
                 <span className="text-[10px] text-[#ffb800] font-bold uppercase">
-                  MÓDULO N° {leccion.numero_leccion || leccion.orden || 1}
+                  PASO {pasoActualIdx + 1} DE {pasos.length}
                 </span>
               </div>
 
               <h2 className="text-lg sm:text-xl font-bold text-white mb-4 leading-snug font-sans">
-                {leccion.nombre}
+                {pasoActual.data.titulo || pasoActual.data.nombre || leccion.nombre}
               </h2>
 
               <div className="space-y-4 bg-[#050914] border border-[#9fef00]/30 rounded-xl p-5 text-slate-200 text-sm leading-relaxed mb-6 font-sans shadow-inner">
-                {paginaActual.contenidos && paginaActual.contenidos.length > 0 ? (
-                  paginaActual.contenidos.map((c, i) => (
-                    <p key={c.id || i} className="border-l-2 border-[#ffb800] pl-3">
-                      {c.texto}
+                {pasoActual.data.contenidos && pasoActual.data.contenidos.length > 0 ? (
+                  pasoActual.data.contenidos.map((c, i) => (
+                    <p key={c.id || i} className="border-l-2 border-[#ffb800] pl-3 whitespace-pre-line">
+                      {c.texto || c.contenido || c.descripcion}
                     </p>
                   ))
+                ) : (pasoActual.data.texto || pasoActual.data.contenido || pasoActual.data.descripcion) ? (
+                  <p className="border-l-2 border-[#ffb800] pl-3 whitespace-pre-line">
+                    {pasoActual.data.texto || pasoActual.data.contenido || pasoActual.data.descripcion}
+                  </p>
                 ) : (
-                  <p className="border-l-2 border-[#ffb800] pl-3">
-                    Especificación técnica normativa para {leccion.nombre}.
+                  <p className="text-slate-400 italic text-xs">
+                    Esta página (ID: {pasoActual.data.id}) aún no tiene contenidos asociados en <code className="text-[#9fef00]">/api/contenidos/</code>.
                   </p>
                 )}
 
-                {paginaActual.imagenes && paginaActual.imagenes.length > 0 && (
+                {pasoActual.data.imagenes && pasoActual.data.imagenes.length > 0 && (
                   <div className="grid grid-cols-1 gap-3 pt-3">
-                    {paginaActual.imagenes.map((img, i) => (
+                    {pasoActual.data.imagenes.map((img, i) => (
                       <img
                         key={img.id || i}
-                        src={img.imagen}
-                        alt={`Esquema página ${paginaActual.numero_pagina}`}
+                        src={img.imagen || img.url}
+                        alt={img.nombre || `Imagen página ${pasoActual.ordenPagina}`}
                         className="w-full max-h-64 object-contain rounded-lg border border-slate-800 bg-[#0a1120] p-2"
                       />
                     ))}
@@ -287,34 +418,47 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
 
               <button
                 onMouseEnter={() => sfx.playHover()}
-                onClick={handleSiguientePagina}
+                onClick={avanzarAlSiguientePaso}
                 className="w-full py-3.5 bg-[#ffb800] hover:bg-[#e0a100] text-slate-950 font-black rounded-xl shadow-[0_0_20px_rgba(255,184,0,0.35)] transition text-xs uppercase cursor-pointer tracking-wider"
               >
-                {paginaActualIdx < totalPasosTeoria - 1
+                {siguientePaso?.tipo === 'pregunta'
+                  ? `RESPONDER PREGUNTA DE PÁGINA ${pasoActual.ordenPagina} ⚡`
+                  : siguientePaso?.tipo === 'teoria'
                   ? 'SIGUIENTE PÁGINA ➔'
-                  : preguntas.length > 0
-                  ? 'INICIAR EVALUACIÓN DE CAMPO ⚡'
                   : 'COMPLETAR MÓDULO ✔'}
               </button>
             </div>
           )}
 
-          {/* FASE 2: PREGUNTAS */}
-          {fase === 'preguntas' && preguntaActual && (
+          {/* PASO TIPO PREGUNTA */}
+          {!finalizado && pasos.length > 0 && pasoActual?.tipo === 'pregunta' && (
             <div className="flex flex-col">
               <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
                 <span className="text-[10px] text-[#ffb800] bg-[#261f0c] border border-[#ffb800]/40 px-3 py-1 rounded-md uppercase font-bold">
-                  🎯 PREGUNTA {preguntaActual.numero_pregunta || preguntaActualIdx + 1} DE {totalPreguntas}
+                  🎯 PREGUNTA {pasoActual.ordenPregunta} DE {totalPreguntasCount} (PÁGINA {pasoActual.ordenPaginaAsociada})
                 </span>
                 <span className="text-[10px] text-[#9fef00] font-bold">+100 XP</span>
               </div>
 
               <h3 className="text-base sm:text-lg font-bold text-white mb-5 leading-snug font-sans">
-                {preguntaActual.texto}
+                {pasoActual.data.texto || pasoActual.data.enunciado || pasoActual.data.pregunta}
               </h3>
 
+              {pasoActual.data.imagenes && pasoActual.data.imagenes.length > 0 && (
+                <div className="grid grid-cols-1 gap-3 mb-5">
+                  {pasoActual.data.imagenes.map((img, i) => (
+                    <img
+                      key={img.id || i}
+                      src={img.imagen || img.url}
+                      alt={img.nombre || `Diagrama pregunta ${pasoActual.ordenPregunta}`}
+                      className="w-full max-h-56 object-contain rounded-lg border border-slate-800 bg-[#050914] p-2"
+                    />
+                  ))}
+                </div>
+              )}
+
               <div className="flex flex-col gap-3 mb-6">
-                {preguntaActual.opciones?.map((opcion, idx) => {
+                {pasoActual.data.opciones?.map((opcion, idx) => {
                   let estilosOpcion =
                     'bg-[#07130b] border-[#9fef00]/40 text-slate-200 hover:border-[#ffb800] hover:bg-[#0d1f14]';
 
@@ -342,7 +486,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
                         <span className="w-6 h-6 rounded-md bg-[#050914] border border-current flex items-center justify-center text-[10px] font-bold shrink-0">
                           {String.fromCharCode(65 + idx)}
                         </span>
-                        <span className="font-sans font-medium">{opcion.texto}</span>
+                        <span className="font-sans font-medium">{opcion.texto || opcion.opcion}</span>
                       </div>
                       {opcionSeleccionada !== null && opcion.es_correcta && (
                         <span className="text-[#9fef00] font-bold text-base">✔</span>
@@ -366,26 +510,30 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
                   >
                     <span>
                       {esCorrecta
-                        ? '⚡ ¡Respuesta correcta conforme a la normativa SEC!'
-                        : '⚠️ Respuesta incorrecta. Revisa el pliego normativo RIC.'}
+                        ? '⚡ ¡Respuesta correcta!'
+                        : '⚠️ Respuesta incorrecta. Revisa el contenido técnico.'}
                     </span>
                     <span>{esCorrecta ? '+25 NC' : '-1 HP'}</span>
                   </div>
 
                   <button
                     onMouseEnter={() => sfx.playHover()}
-                    onClick={handleSiguientePregunta}
+                    onClick={avanzarAlSiguientePaso}
                     className="w-full py-3.5 bg-[#9fef00] hover:bg-[#86cb00] text-slate-950 font-black rounded-xl shadow-[0_0_20px_rgba(159,239,0,0.35)] transition text-xs uppercase cursor-pointer tracking-wider"
                   >
-                    {preguntaActualIdx < totalPreguntas - 1 ? 'SIGUIENTE PREGUNTA ➔' : 'VER REPORTE FINAL ⚡'}
+                    {siguientePaso?.tipo === 'teoria'
+                      ? `CONTINUAR A PÁGINA ${siguientePaso.ordenPagina} ➔`
+                      : siguientePaso?.tipo === 'pregunta'
+                      ? 'SIGUIENTE PREGUNTA ➔'
+                      : 'VER REPORTE FINAL ⚡'}
                   </button>
                 </div>
               )}
             </div>
           )}
 
-          {/* FASE 3: RESULTADO */}
-          {fase === 'resultado' && (
+          {/* PANTALLA FINAL: RESULTADO */}
+          {finalizado && (
             <div className="flex flex-col items-center text-center py-6">
               <div className="w-20 h-20 rounded-2xl bg-[#112614] border-2 border-[#9fef00] mb-4 shadow-[0_0_30px_rgba(159,239,0,0.4)] flex items-center justify-center text-4xl">
                 ⚡
@@ -395,19 +543,19 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
               </span>
               <h2 className="text-2xl font-black text-white mb-2">¡MÓDULO DOMINADO!</h2>
               <p className="text-xs text-slate-300 mb-6 font-sans max-w-md">
-                Has completado la revisión técnica y evaluación de{' '}
+                Has completado todas las páginas y verificaciones técnicas de{' '}
                 <strong className="text-[#ffb800]">{leccion.nombre}</strong>.
               </p>
 
               <div className="grid grid-cols-3 gap-3 mb-8 w-full max-w-md">
                 <div className="bg-[#050914] border border-[#9fef00]/40 p-3 rounded-xl flex flex-col items-center">
                   <span className="text-[9px] text-[#9fef00]">PÁGINAS LEÍDAS</span>
-                  <span className="text-lg font-bold text-white mt-1">{totalPasosTeoria}</span>
+                  <span className="text-lg font-bold text-white mt-1">{totalPaginasCount}</span>
                 </div>
                 <div className="bg-[#050914] border border-[#ffb800]/40 p-3 rounded-xl flex flex-col items-center">
                   <span className="text-[9px] text-[#ffb800]">ACIERTOS</span>
                   <span className="text-lg font-bold text-white mt-1">
-                    {aciertos} / {totalPreguntas}
+                    {aciertos} / {totalPreguntasCount}
                   </span>
                 </div>
                 <div className="bg-[#050914] border border-rose-500/40 p-3 rounded-xl flex flex-col items-center">
