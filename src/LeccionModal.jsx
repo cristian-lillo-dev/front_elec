@@ -447,7 +447,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
                 className="w-full py-4.5 bg-[#ffb800] hover:bg-[#e0a100] text-slate-950 font-black rounded-2xl shadow-[0_0_30px_rgba(255,184,0,0.4)] transition text-sm uppercase cursor-pointer tracking-wider"
               >
                 {siguientePaso?.tipo === 'pregunta'
-                  ? `RESPONDER PREGUNTA DE PÁGINA ${pasoActual.ordenPagina} ⚡`
+                  ? `RESPONDER PREGUNTAS⚡`
                   : siguientePaso?.tipo === 'teoria'
                   ? 'SIGUIENTE PÁGINA ➔'
                   : 'COMPLETAR MÓDULO ✔'}
