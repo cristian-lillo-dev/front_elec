@@ -162,26 +162,31 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
     cargarDatosReales();
   }, [leccion]);
 
-  // Función para leer exclusivamente el título y el contenido con acento de Español de México (es-MX)
+  // Función para detectar si las opciones pertenecen a una pregunta de Verdadero o Falso
+  const esPreguntaVerdaderoFalso = (opciones) => {
+    if (!Array.isArray(opciones) || opciones.length === 0) return false;
+    // Comprobar si los textos de las opciones coinciden típicamente con Verdadero/Falso
+    const textosOpciones = opciones.map(op => (op.texto || op.opcion || '').trim().toLowerCase());
+    const contieneVerdadero = textosOpciones.some(t => t === 'verdadero' || t === 'v');
+    const contieneFalso = textosOpciones.some(t => t === 'falso' || t === 'f');
+    return (opciones.length <= 2 && contieneVerdadero && contieneFalso);
+  };
+
+  // Función para leer contenido (teoría, o pregunta con alternativas si no es V/F) con acento es-MX
   const leerContenidoActual = () => {
     if (!('speechSynthesis' in window)) {
       console.warn("Tu navegador no soporta síntesis de voz.");
       return;
     }
 
-    // Cancelar cualquier audio anterior
     window.speechSynthesis.cancel();
 
     const pasoActual = pasos[pasoActualIdx];
-    
-    // Obtener las voces disponibles del navegador
     const voces = window.speechSynthesis.getVoices();
-    // Buscar explícitamente una voz de México (es-MX)
     const vozMexico = voces.find(voz => voz.lang.toLowerCase().includes('es-mx'));
 
     if (pasoActual?.tipo === 'teoria') {
       const titulo = pasoActual.data.titulo || pasoActual.data.nombre || leccion.nombre || '';
-      
       let textosContenido = '';
       if (pasoActual.data.contenidos && pasoActual.data.contenidos.length > 0) {
         textosContenido = pasoActual.data.contenidos
@@ -199,14 +204,30 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
         utterance.voice = vozMexico;
         utterance.lang = vozMexico.lang;
       } else {
-        utterance.lang = 'es-MX'; // Forzar idioma base México
+        utterance.lang = 'es-MX';
       }
       utterance.rate = 1.0;
 
       window.speechSynthesis.speak(utterance);
     } else if (pasoActual?.tipo === 'pregunta') {
       const enunciado = pasoActual.data.texto || pasoActual.data.enunciado || pasoActual.data.pregunta || '';
-      const utterance = new SpeechSynthesisUtterance(`Pregunta: ${enunciado}`);
+      const opciones = pasoActual.data.opciones || [];
+      const esVF = esPreguntaVerdaderoFalso(opciones);
+
+      let textoCompleto = `Pregunta: ${enunciado}.`;
+
+      // Si NO es de Verdadero/Falso, leemos las alternativas ordenadas por letra (A, B, C...)
+      if (!esVF && opciones.length > 0) {
+        const textoAlternativas = opciones.map((op, idx) => {
+          const letra = String.fromCharCode(65 + idx);
+          const textoOp = op.texto || op.opcion || '';
+          return `Opción ${letra}: ${textoOp}`;
+        }).join('. ');
+
+        textoCompleto += ` Alternativas: ${textoAlternativas}.`;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(textoCompleto);
       
       if (vozMexico) {
         utterance.voice = vozMexico;
@@ -214,6 +235,7 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
       } else {
         utterance.lang = 'es-MX';
       }
+      utterance.rate = 1.0;
 
       window.speechSynthesis.speak(utterance);
     }
@@ -393,7 +415,6 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
                   📖 PÁGINA {pasoActual.data.numero_pagina || pasoActual.ordenPagina} DE {totalPaginasCount}
                 </span>
 
-                {/* Botón de lectura de voz integrado */}
                 <button
                   onClick={leerContenidoActual}
                   onMouseEnter={() => sfx.playHover()}
@@ -404,12 +425,10 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
                 </button>
               </div>
 
-              {/* Título de la Lección / Página */}
               <h2 className="text-2xl sm:text-3xl font-black text-white mb-6 leading-tight font-sans tracking-tight">
                 {pasoActual.data.titulo || pasoActual.data.nombre || leccion.nombre}
               </h2>
 
-              {/* Bloque de Contenido */}
               <div className="space-y-6 mb-8 font-sans">
                 {pasoActual.data.contenidos && pasoActual.data.contenidos.length > 0 ? (
                   pasoActual.data.contenidos.map((c, i) => (
@@ -462,10 +481,17 @@ export default function LeccionModal({ unidad, leccion, usuarioId, onClose, onCo
                 <span className="text-xs text-[#ffb800] bg-[#261f0c] border border-[#ffb800]/40 px-3.5 py-1 rounded-lg uppercase font-bold tracking-wider">
                   🎯 PREGUNTA {pasoActual.ordenPregunta} DE {totalPreguntasCount} (PÁGINA {pasoActual.ordenPaginaAsociada})
                 </span>
-                <span className="text-xs text-[#9fef00] font-bold tracking-wider">+100 XP</span>
+
+                <button
+                  onClick={leerContenidoActual}
+                  onMouseEnter={() => sfx.playHover()}
+                  className="flex items-center gap-1.5 text-xs text-[#ffb800] bg-[#ffb800]/10 border border-[#ffb800]/40 hover:bg-[#ffb800]/20 px-3 py-1 rounded-lg uppercase font-bold transition cursor-pointer"
+                  title="Escuchar pregunta y alternativas"
+                >
+                  <span>🔊</span> Escuchar
+                </button>
               </div>
 
-              {/* Título/Enunciado de la pregunta con letra un poco más pequeña (text-base sm:text-lg) */}
               <h3 className="text-base sm:text-lg font-bold text-white mb-6 leading-snug font-sans tracking-wide">
                 {pasoActual.data.texto || pasoActual.data.enunciado || pasoActual.data.pregunta}
               </h3>

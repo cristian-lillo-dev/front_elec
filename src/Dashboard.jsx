@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import logoImg from './assets/logo_s.png';
 import DetalleUnidad from './DetalleUnidad';
 import CalculadoraAlimentadores from './CalculadoraAlimentadores';
+import AsistenteRIC from './AsistenteRIC';
 import { sfx } from './soundEffects';
 
 const API_BASE_URL = 'https://backelec1-production.up.railway.app/api';
@@ -104,27 +105,33 @@ export default function Dashboard({ user, onLogout }) {
 
   if (calculadoraActiva === 'alimentadores') {
     return (
-      <CalculadoraAlimentadores 
-        user={user}
-        nombreUsuario={nombreUsuario}
-        onVolver={handleIrPanel} 
-        onLogout={onLogout}
-      />
+      <>
+        <CalculadoraAlimentadores 
+          user={user}
+          nombreUsuario={nombreUsuario}
+          onVolver={handleIrPanel} 
+          onLogout={onLogout}
+        />
+        <AsistenteRIC />
+      </>
     );
   }
 
   if (unidadSeleccionada) {
     return (
-      <DetalleUnidad 
-        user={user}
-        nombreUsuario={nombreUsuario}
-        unidad={unidadSeleccionada} 
-        usuarioId={user?.id}
-        onVolver={handleIrPanel} 
-        onIrCalculadora={handleIrCalculadora}
-        onLogout={onLogout}
-        onSelectLeccion={(leccion) => setLeccionActiva(leccion)} 
-      />
+      <>
+        <DetalleUnidad 
+          user={user}
+          nombreUsuario={nombreUsuario}
+          unidad={unidadSeleccionada} 
+          usuarioId={user?.id}
+          onVolver={handleIrPanel} 
+          onIrCalculadora={handleIrCalculadora}
+          onLogout={onLogout}
+          onSelectLeccion={(leccion) => setLeccionActiva(leccion)} 
+        />
+        <AsistenteRIC />
+      </>
     );
   }
 
@@ -169,9 +176,6 @@ export default function Dashboard({ user, onLogout }) {
               <span>{sonidoMuteado ? '🔇' : '🔊'}</span>
               <span className="hidden sm:inline text-[10px]">{sonidoMuteado ? 'MUTE' : 'SFX'}</span>
             </button>
-
-            {/* Badge del Usuario Conectado */}
-  
 
             <button 
               onMouseEnter={() => sfx.playHover()}
@@ -383,6 +387,9 @@ export default function Dashboard({ user, onLogout }) {
           </div>
         </div>
       </main>
+
+      {/* Asistente Flotante SEC RIC */}
+      <AsistenteRIC />
 
       <footer className="bg-[#050914] border-t border-[#9fef00]/30 py-4 px-6 text-center text-[10px] text-slate-400 z-10 flex justify-between items-center max-w-7xl mx-auto w-full">
         <span className="text-[#9fef00] font-bold">NORMATIVA SEC VIGENTE</span>
