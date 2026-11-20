@@ -1,25 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import tiuqueHeroImg from './assets/tiuque_hero.png';
 import logoImg from './assets/logo_s.png';
 import wallImg from './assets/wall_1.jpg';
-import iconoContento from './assets/icono_contento.png';
-import iconoAlerta from './assets/icono_alerta.png';
 import iconoConcentrado from './assets/icono_concentrado.png';
 import iconoInterrogante from './assets/icono_interrogante.png';
+import iconoContento from './assets/icono_contento.png';
 
 const API_BASE_URL = 'https://backelec1-production.up.railway.app/api';
 
 const PILLARS_DATA = [
   {
-    id: 'validar',
-    tabLabel: 'Validar Competencia',
-    badge: 'SIMULACIÓN Y DIAGNÓSTICO RIC',
-    title: 'Simula Escenarios Reales. Valida Tu Criterio.',
+    id: 'asistente-normativa',
+    tabLabel: 'Asistente de normativa',
+    badge: 'CONSULTA NORMATIVA SEC RIC',
+    title: 'Resuelve Pliegos RIC al Instante.',
     description:
-      'Evalúa tu dominio técnico frente a casos normativos SEC y fallas típicas en instalaciones eléctricas mediante retos prácticos y simulaciones paso a paso, para que llegues seguro a terreno y a tus evaluaciones.',
-    ctaLabel: 'PROBAR SIMULACIÓN',
+      'Consulta exigencias normativas, tablas y criterios técnicos de los pliegos RIC de forma directa y respaldada para tus proyectos y evaluaciones.',
+    ctaLabel: 'ABRIR ASISTENTE',
+    targetAuthMode: 'login',
+    visualTitle: 'ASISTENTE NORMATIVO ACTIVO',
+    visualSubtitle: 'Búsqueda guiada en pliegos técnicos y criterios SEC',
+    visualTag: 'PLIEGOS RIC • SEC',
+    visualImg: iconoInterrogante,
+    items: [
+      {
+        title: 'Consulta rápida por pliego y tema técnico',
+        subtitle: 'Ubica requisitos normativos clave sin perder tiempo entre documentos.'
+      },
+      {
+        title: 'Respaldo de criterio para obra y examen',
+        subtitle: 'Verifica exigencias aplicables antes de ejecutar o responder.'
+      }
+    ]
+  },
+  {
+    id: 'calculo-electrico',
+    tabLabel: 'Herramientas de cálculo eléctrico',
+    badge: 'CÁLCULO Y DIMENSIONAMIENTO',
+    title: 'Calcula Con Precisión. Valida En Terreno.',
+    description:
+      'Realiza cálculos eléctricos esenciales —caída de tensión, secciones, protecciones y parámetros de taller— con apoyo normativo claro.',
+    ctaLabel: 'PROBAR HERRAMIENTAS',
     targetAuthMode: 'registro',
-    visualTitle: 'MÓDULO DE PRUEBA ACTIVO',
+    visualTitle: 'CALCULADORA DE TALLER ACTIVA',
     visualSubtitle: 'Verificación de caída de tensión, protecciones y pliegos RIC',
     visualTag: 'RIC N°02 • N°04 • N°06',
     visualImg: iconoConcentrado,
@@ -35,50 +58,26 @@ const PILLARS_DATA = [
     ]
   },
   {
-    id: 'formacion',
-    tabLabel: 'Formar en Terreno',
-    badge: 'RUTA PROGRESIVA Y TALLER',
-    title: 'Entrena Tu Equipo. Domina Cada Pliego.',
+    id: 'aprende-jugando',
+    tabLabel: 'Aprende jugando',
+    badge: 'RETOS INTERACTIVOS Y RACHAS',
+    title: 'Domina La Norma Jugando. Sube De Nivel.',
     description:
-      'Construye hábitos técnicos sólidos con rutas guiadas, tablas normativas consultables y explicaciones visuales pensadas para estudiantes, técnicos en formación y especialistas que buscan precisión diaria.',
-    ctaLabel: 'VER RUTA DE FORMACIÓN',
+      'Avanza por mapas de retos, escenarios prácticos y rachas diarias para afianzar la electricidad y la normativa SEC de forma dinámica.',
+    ctaLabel: 'EMPEZAR A JUGAR',
     targetAuthMode: 'registro',
-    visualTitle: 'UNIDAD DE ENTRENAMIENTO',
-    visualSubtitle: 'Lectura guiada de pliegos y fórmulas aplicadas',
-    visualTag: 'RUTA GUIADA • XP & RACHAS',
-    visualImg: iconoInterrogante,
+    visualTitle: 'MODO DESAFÍO ACTIVO',
+    visualSubtitle: 'Retos progresivos, puntos y práctica aplicada',
+    visualTag: 'XP • RACHAS • NIVELES',
+    visualImg: iconoContento,
     items: [
       {
-        title: 'Mapas de retos por nivel de dificultad',
-        subtitle: 'Avanza desde fundamentos eléctricos hasta exigencias normativas específicas.'
+        title: 'Retos prácticos por nivel de dificultad',
+        subtitle: 'Refuerza conceptos clave mediante ejercicios interactivos.'
       },
       {
-        title: 'Apoyo visual con asistentes especializados',
-        subtitle: 'Resuelve dudas de fórmulas, unidades y normativa sin perder el hilo.'
-      }
-    ]
-  },
-  {
-    id: 'resiliencia',
-    tabLabel: 'Lograr Resiliencia SEC',
-    badge: 'SEGURIDAD Y CUMPLIMIENTO',
-    title: 'Previene Riesgos. Opera Con Respaldo.',
-    description:
-      'Integra la prevención de riesgos y el cumplimiento normativo en cada decisión técnica para reducir errores humanos, proteger la instalación y operar con confianza en entornos exigentes.',
-    ctaLabel: 'ACTIVAR PROTOCOLO',
-    targetAuthMode: 'login',
-    visualTitle: 'ALERTA PREVENTIVA ACTIVA',
-    visualSubtitle: 'Checklist de seguridad y criterio de resguardo operacional',
-    visualTag: 'SEGURIDAD PRIMERO • RIC',
-    visualImg: iconoAlerta,
-    items: [
-      {
-        title: 'Protocolos y alertas de seguridad eléctrica',
-        subtitle: 'Refuerza puntos críticos de corte, medición y resguardo personal.'
-      },
-      {
-        title: 'Trazabilidad de avance y dominio técnico',
-        subtitle: 'Mantén un registro claro de tus módulos completados y áreas por reforzar.'
+        title: 'Progreso continuo y constancia diaria',
+        subtitle: 'Mantén tu racha y detecta qué temas necesitas repasar.'
       }
     ]
   }
@@ -87,8 +86,9 @@ const PILLARS_DATA = [
 export default function Auth({ onLoginExitoso }) {
   const [vista, setVista] = useState('landing');
   const [tipoAuth, setTipoAuth] = useState('login');
-  const [pillarActivoId, setPillarActivoId] = useState('validar');
+  const [pillarActivoId, setPillarActivoId] = useState('calculo-electrico');
   const [itemActivoIdx, setItemActivoIdx] = useState(0);
+  const [menuAbierto, setMenuAbierto] = useState(false);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -100,6 +100,11 @@ export default function Auth({ onLoginExitoso }) {
   });
   const [cargando, setCargando] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    setMenuAbierto(false);
+  }, [vista]);
 
   const pillarActual =
     PILLARS_DATA.find((p) => p.id === pillarActivoId) || PILLARS_DATA[0];
@@ -188,45 +193,35 @@ export default function Auth({ onLoginExitoso }) {
         {/* Grid Técnico Estilo Hack The Box */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#9fef0008_1px,transparent_1px),linear-gradient(to_bottom,#9fef0008_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
-        {/* Header HUD */}
+        {/* Header HUD con Menú Hamburguesa en Móvil */}
         <header className="sticky top-0 z-50 bg-[#080d1a]/95 backdrop-blur-xl border-b border-[#9fef00]/30 shadow-[0_0_20px_rgba(159,239,0,0.1)]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
             <div
-              className="flex items-center space-x-3 cursor-pointer group"
-              onClick={() => setVista('landing')}
+              className="flex items-center space-x-3 cursor-pointer group min-w-0"
+              onClick={() => {
+                setVista('landing');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             >
               <img
                 src={logoImg}
                 alt="AreaElectrica Logo"
-                className="w-10 h-10 object-contain rounded-xl border border-[#9fef00]/40 group-hover:scale-105 transition shadow-[0_0_15px_rgba(159,239,0,0.2)]"
+                className="w-9 h-9 sm:w-10 sm:h-10 object-contain rounded-xl border border-[#9fef00]/40 group-hover:scale-105 transition shadow-[0_0_15px_rgba(159,239,0,0.2)] shrink-0"
               />
-              <div className="flex flex-col">
-                <span className="text-lg font-black tracking-wider text-white uppercase">
+              <div className="flex flex-col min-w-0">
+                <span className="text-base sm:text-lg font-black tracking-wider text-white uppercase truncate">
                   AREA<span className="text-[#9fef00]">ELECTRICA</span>
                 </span>
-                <span className="text-[9px] text-slate-400 tracking-widest uppercase">
+                <span className="text-[9px] text-slate-400 tracking-widest uppercase hidden sm:block">
                   PLATAFORMA NORMATIVA SEC RIC
                 </span>
               </div>
             </div>
 
-            <nav className="hidden md:flex items-center space-x-8 text-xs font-bold tracking-wider text-slate-300 uppercase">
-              <a href="#enfoque-operativo" className="hover:text-[#9fef00] transition-colors">
-                Enfoque
-              </a>
-              <a href="#plataforma" className="hover:text-[#9fef00] transition-colors">
-                Módulos
-              </a>
-              <a href="#tiuque-section" className="hover:text-[#ffb800] transition-colors">
-                Tiuque-Tec
-              </a>
-              <a href="#escuadron" className="hover:text-[#9fef00] transition-colors">
-                Asistentes
-              </a>
-            </nav>
-
-            <div className="flex items-center space-x-3">
+            {/* Acciones Escritorio */}
+            <div className="hidden md:flex items-center space-x-3">
               <button
+                type="button"
                 onClick={() => {
                   setTipoAuth('login');
                   setVista('auth');
@@ -236,6 +231,7 @@ export default function Auth({ onLoginExitoso }) {
                 Iniciar Sesión
               </button>
               <button
+                type="button"
                 onClick={() => {
                   setTipoAuth('registro');
                   setVista('auth');
@@ -245,11 +241,48 @@ export default function Auth({ onLoginExitoso }) {
                 Registro Gratis ⚡
               </button>
             </div>
+
+            {/* Botón Hamburguesa Móvil */}
+            <button
+              type="button"
+              aria-label="Abrir menú"
+              aria-expanded={menuAbierto}
+              onClick={() => setMenuAbierto((prev) => !prev)}
+              className="md:hidden w-10 h-10 rounded-xl bg-[#0a1120] border border-[#9fef00]/40 text-[#9fef00] flex items-center justify-center text-lg font-bold cursor-pointer hover:bg-[#112614] transition shrink-0"
+            >
+              {menuAbierto ? '✕' : '☰'}
+            </button>
           </div>
+
+          {/* Desplegable Móvil */}
+          {menuAbierto && (
+            <div className="md:hidden bg-[#080d1a] border-t border-[#9fef00]/20 px-4 py-4 flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setTipoAuth('login');
+                  setVista('auth');
+                }}
+                className="w-full text-center text-xs font-bold text-[#9fef00] hover:text-slate-950 hover:bg-[#9fef00] py-3 rounded-xl border border-[#9fef00]/40 bg-[#0a1120] transition-all cursor-pointer uppercase tracking-wider"
+              >
+                Iniciar Sesión
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTipoAuth('registro');
+                  setVista('auth');
+                }}
+                className="w-full bg-[#ffb800] hover:bg-[#e0a100] text-slate-950 font-black py-3 rounded-xl shadow-[0_0_20px_rgba(255,184,0,0.3)] transition-all text-xs cursor-pointer uppercase tracking-wider"
+              >
+                Registro Gratis ⚡
+              </button>
+            </div>
+          )}
         </header>
 
         {/* Hero Section */}
-        <section className="relative overflow-hidden pt-20 pb-28 lg:pt-28 lg:pb-36 border-b border-[#9fef00]/20">
+        <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28 lg:pt-28 lg:pb-36 border-b border-[#9fef00]/20">
           <div className="absolute inset-0 z-0 pointer-events-none opacity-35">
             <img
               src={wallImg}
@@ -261,13 +294,13 @@ export default function Auth({ onLoginExitoso }) {
           <div className="absolute inset-0 bg-gradient-to-t from-[#050914] via-transparent to-[#050914]/60 z-0 pointer-events-none" />
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="max-w-3xl space-y-6">
-              <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-lg bg-[#112614] border border-[#9fef00]/50 text-[#9fef00] text-xs font-bold uppercase tracking-widest shadow-[0_0_15px_rgba(159,239,0,0.15)]">
-                <span className="w-2 h-2 rounded-full bg-[#9fef00] animate-ping" />
+            <div className="max-w-3xl space-y-5 sm:space-y-6">
+              <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-[#112614] border border-[#9fef00]/50 text-[#9fef00] text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-[0_0_15px_rgba(159,239,0,0.15)]">
+                <span className="w-2 h-2 rounded-full bg-[#9fef00] animate-ping shrink-0" />
                 <span>ENTRENAMIENTO TÁCTICO • NORMATIVA ELÉCTRICA SEC</span>
               </div>
 
-              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] text-white drop-shadow-md font-sans">
+              <h1 className="text-3xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] text-white drop-shadow-md font-sans">
                 Domina la electricidad y la normativa{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ffb800] via-[#9fef00] to-[#00f0ff]">
                   RIC jugando
@@ -275,12 +308,13 @@ export default function Auth({ onLoginExitoso }) {
                 .
               </h1>
 
-              <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed font-sans">
+              <p className="text-sm sm:text-lg text-slate-300 max-w-2xl leading-relaxed font-sans">
                 La primera plataforma gamificada de Chile que combina teoría eléctrica práctica, mapas de retos interactivos y calculadoras normativas para profesionales y estudiantes.
               </p>
 
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 pt-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-2 sm:pt-4">
                 <button
+                  type="button"
                   onClick={() => {
                     setTipoAuth('registro');
                     setVista('auth');
@@ -290,6 +324,7 @@ export default function Auth({ onLoginExitoso }) {
                   <span>⚡ EMPEZAR A APRENDER</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     setTipoAuth('login');
                     setVista('auth');
@@ -300,7 +335,7 @@ export default function Auth({ onLoginExitoso }) {
                 </button>
               </div>
 
-              <p className="text-[11px] text-[#9fef00] pt-2 tracking-wide uppercase">
+              <p className="text-[11px] text-[#9fef00] pt-1 sm:pt-2 tracking-wide uppercase">
                 ✔ Alineado estrictamente con los Pliegos Técnicos Normativos SEC (Chile).
               </p>
             </div>
@@ -310,14 +345,14 @@ export default function Auth({ onLoginExitoso }) {
         {/* Sección Continua al Hero: Pestañas + Showcase Interactivo */}
         <section
           id="enfoque-operativo"
-          className="py-16 sm:py-20 bg-[#040812] border-b border-[#9fef00]/20 relative z-10"
+          className="py-12 sm:py-20 bg-[#040812] relative z-10"
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* 3 Pestañas Superiores */}
             <div
               role="tablist"
               aria-label="Pilares de entrenamiento eléctrico"
-              className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
+              className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mb-6"
             >
               {PILLARS_DATA.map((pillar) => {
                 const isActive = pillar.id === pillarActual.id;
@@ -328,7 +363,7 @@ export default function Auth({ onLoginExitoso }) {
                     role="tab"
                     aria-selected={isActive}
                     onClick={() => handleSelectPillar(pillar.id)}
-                    className={`py-4 px-5 rounded-xl text-xs sm:text-sm font-bold tracking-wide transition-all cursor-pointer text-center border ${
+                    className={`py-3.5 sm:py-4 px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-bold tracking-wide transition-all cursor-pointer text-center border ${
                       isActive
                         ? 'bg-[#0b1324] text-white border-[#9fef00] shadow-[0_0_24px_rgba(159,239,0,0.16)]'
                         : 'bg-[#070d1a] text-slate-400 border-slate-800/90 hover:text-slate-200 hover:border-slate-700'
@@ -341,15 +376,15 @@ export default function Auth({ onLoginExitoso }) {
             </div>
 
             {/* Contenedor Principal Dividido */}
-            <div className="bg-[#070d1a]/95 border border-slate-800/90 rounded-2xl p-6 sm:p-10 lg:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.55)] grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+            <div className="bg-[#070d1a]/95 border border-slate-800/90 rounded-2xl p-5 sm:p-10 lg:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.55)] grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
               {/* Columna Izquierda: Copy, Sub-módulos Interactivos y CTA */}
-              <div className="lg:col-span-6 space-y-5">
+              <div className="lg:col-span-6 space-y-4 sm:space-y-5">
                 <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-md bg-[#9fef00]/10 border border-[#9fef00]/30 text-[#9fef00] text-[10px] font-bold uppercase tracking-widest">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#9fef00]" />
                   <span>{pillarActual.badge}</span>
                 </div>
 
-                <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold text-white tracking-tight leading-[1.12] font-sans">
+                <h2 className="text-2xl sm:text-4xl lg:text-[42px] font-extrabold text-white tracking-tight leading-[1.12] font-sans">
                   {pillarActual.title}
                 </h2>
 
@@ -366,7 +401,7 @@ export default function Auth({ onLoginExitoso }) {
                         key={subItem.title}
                         type="button"
                         onClick={() => setItemActivoIdx(idx)}
-                        className={`w-full text-left rounded-xl p-4 transition-all cursor-pointer border ${
+                        className={`w-full text-left rounded-xl p-3.5 sm:p-4 transition-all cursor-pointer border ${
                           selected
                             ? 'bg-[#0d182d] border-[#9fef00] shadow-[0_0_20px_rgba(159,239,0,0.12)]'
                             : 'bg-[#050914]/80 border-slate-800 hover:border-slate-700'
@@ -397,268 +432,27 @@ export default function Auth({ onLoginExitoso }) {
                       setTipoAuth(pillarActual.targetAuthMode);
                       setVista('auth');
                     }}
-                    className="bg-[#9fef00] hover:bg-[#8be000] text-slate-950 font-black px-6 py-3 rounded-lg text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(159,239,0,0.25)] hover:scale-[1.02] transition-all cursor-pointer"
+                    className="w-full sm:w-auto bg-[#9fef00] hover:bg-[#8be000] text-slate-950 font-black px-6 py-3.5 sm:py-3 rounded-lg text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(159,239,0,0.25)] hover:scale-[1.02] transition-all cursor-pointer"
                   >
                     {pillarActual.ctaLabel}
                   </button>
                 </div>
               </div>
 
-              {/* Columna Derecha: Escena Visual Técnica */}
-              <div className="lg:col-span-6 relative">
-                <div className="relative rounded-2xl bg-[#050914] border border-slate-800 p-6 sm:p-8 overflow-hidden min-h-[340px] sm:min-h-[390px] flex flex-col justify-between">
-                  {/* Bloques decorativos geométricos tipo referencia */}
-                  <div className="absolute top-6 right-8 w-20 h-20 rounded-md bg-[#9fef00]/10 border border-[#9fef00]/20 pointer-events-none" />
-                  <div className="absolute bottom-14 left-6 w-28 h-24 rounded-md bg-[#ffb800]/10 border border-[#ffb800]/20 pointer-events-none" />
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 rounded-full bg-[#9fef00]/10 blur-[80px] pointer-events-none" />
-
-                  {/* Barra superior del visor */}
-                  <div className="relative z-10 flex items-center justify-between gap-3 border-b border-slate-800/90 pb-4">
-                    <div className="flex items-center space-x-2.5">
-                      <img
-                        src={pillarActual.visualImg}
-                        alt={pillarActual.visualTitle}
-                        className="w-8 h-8 rounded-lg object-contain bg-[#0a1120] p-1 border border-[#9fef00]/30"
-                      />
-                      <div>
-                        <div className="text-[11px] font-black text-white uppercase tracking-wider">
-                          {pillarActual.visualTitle}
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-sans">
-                          {itemActual.title}
-                        </div>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-bold px-2.5 py-1 rounded bg-[#0a1120] border border-[#ffb800]/40 text-[#ffb800] uppercase">
-                      {pillarActual.visualTag}
-                    </span>
-                  </div>
-
-                  {/* Personaje / Ilustración Central */}
-                  <div className="relative z-10 my-6 flex flex-col items-center justify-center text-center">
-                    <img
-                      src={tiuqueHeroImg}
-                      alt="Tiuque-Tec en operación"
-                      className="w-36 sm:w-44 h-36 sm:h-44 object-contain drop-shadow-[0_14px_28px_rgba(0,0,0,0.85)] transition-transform duration-300"
-                    />
-                  </div>
-
-                  {/* Pie del visor */}
-                  <div className="relative z-10 bg-[#0a1120]/95 border border-slate-800 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-                    <p className="text-[11px] text-slate-300 font-sans">
-                      {pillarActual.visualSubtitle}
-                    </p>
-                    <span className="text-[10px] font-black text-[#9fef00] uppercase tracking-widest shrink-0">
-                      SEC RIC
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Módulos Principales */}
-        <section
-          id="plataforma"
-          className="py-20 bg-[#03060c] border-b border-[#9fef00]/20 relative z-10"
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="mb-12">
-              <span className="text-xs text-[#9fef00] font-bold uppercase tracking-widest block mb-1">
-                ARQUITECTURA DEL SISTEMA
-              </span>
-              <h3 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white font-sans">
-                Aprende, calcula y cumple la norma sin fricción.
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-[#0a1120] border border-[#ffb800]/30 rounded-2xl p-6 flex flex-col justify-between hover:border-[#ffb800] transition shadow-xl group relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-[#ffb800]/5 rounded-full blur-xl group-hover:bg-[#ffb800]/10 transition" />
-                <div>
-                  <div className="w-12 h-12 rounded-xl bg-[#ffb800]/10 border border-[#ffb800]/30 flex items-center justify-center mb-5 p-2.5 shadow-[0_0_15px_rgba(255,184,0,0.15)]">
-                    <img
-                      src={iconoConcentrado}
-                      alt="Gamificación"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <h4 className="text-lg font-bold mb-2 text-white font-sans">
-                    Mapas de Retos Interactivos
-                  </h4>
-                  <p className="text-slate-400 text-xs leading-relaxed font-sans">
-                    Lecciones rápidas, rachas diarias y nodos desbloqueables. Domina cada pliego normativo paso a paso.
-                  </p>
-                </div>
-                <div className="mt-6 pt-4 border-t border-slate-800 text-[10px] text-[#ffb800] font-bold uppercase tracking-widest">
-                  MOTOR GAMIFICADO ACTIVO
-                </div>
-              </div>
-
-              <div className="bg-[#0a1120] border border-[#9fef00]/30 rounded-2xl p-6 flex flex-col justify-between hover:border-[#9fef00] transition shadow-xl group relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-[#9fef00]/5 rounded-full blur-xl group-hover:bg-[#9fef00]/10 transition" />
-                <div>
-                  <div className="w-12 h-12 rounded-xl bg-[#9fef00]/10 border border-[#9fef00]/30 flex items-center justify-center mb-5 text-xl shadow-[0_0_15px_rgba(159,239,0,0.15)]">
-                    📊
-                  </div>
-                  <h4 className="text-lg font-bold mb-2 text-white font-sans">
-                    Calculadoras de Taller
-                  </h4>
-                  <p className="text-slate-400 text-xs leading-relaxed font-sans">
-                    Herramientas integradas para caída de tensión, dimensionamiento de alimentadores y capacidad térmica.
-                  </p>
-                </div>
-                <div className="mt-6 pt-4 border-t border-slate-800 text-[10px] text-[#9fef00] font-bold uppercase tracking-widest">
-                  CÁLCULO EN TIEMPO REAL
-                </div>
-              </div>
-
-              <div className="bg-[#0a1120] border border-[#ffb800]/30 rounded-2xl p-6 flex flex-col justify-between hover:border-[#ffb800] transition shadow-xl group relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-[#ffb800]/5 rounded-full blur-xl group-hover:bg-[#ffb800]/10 transition" />
-                <div>
-                  <div className="w-12 h-12 rounded-xl bg-[#ffb800]/10 border border-[#ffb800]/30 flex items-center justify-center mb-5 text-xl shadow-[0_0_15px_rgba(255,184,0,0.15)]">
-                    📖
-                  </div>
-                  <h4 className="text-lg font-bold mb-2 text-white font-sans">
-                    Pliegos RIC Aplicados
-                  </h4>
-                  <p className="text-slate-400 text-xs leading-relaxed font-sans">
-                    Explicaciones visuales, casos prácticos y alertas de prevención de riesgos aplicadas a terreno.
-                  </p>
-                </div>
-                <div className="mt-6 pt-4 border-t border-slate-800 text-[10px] text-[#ffb800] font-bold uppercase tracking-widest">
-                  VERIFICADO NORMATIVA SEC
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Tiuque-Tec Section */}
-        <section
-          id="tiuque-section"
-          className="py-20 bg-gradient-to-b from-[#03060c] to-[#050914] border-b border-[#9fef00]/20 relative overflow-hidden z-10"
-        >
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-[#9fef00]/5 rounded-full blur-[140px] pointer-events-none" />
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="bg-[#0a1120] border-2 border-[#ffb800]/40 rounded-2xl p-8 sm:p-12 shadow-[0_0_40px_rgba(255,184,0,0.12)] backdrop-blur-xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              <div className="lg:col-span-5 flex justify-center relative">
-                <div className="absolute w-64 h-64 bg-[#ffb800]/15 rounded-full blur-[80px] pointer-events-none" />
-                <div className="p-4 bg-[#050914]/90 border border-[#ffb800]/30 rounded-2xl shadow-[0_0_25px_rgba(255,184,0,0.2)]">
-                  <img
-                    src={tiuqueHeroImg}
-                    alt="Tiuque-Tec Hero"
-                    className="w-full max-w-[260px] object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.9)] hover:scale-105 transition-all duration-500"
-                  />
-                </div>
-              </div>
-
-              <div className="lg:col-span-7 space-y-4">
-                <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-lg bg-[#ffb800]/10 border border-[#ffb800]/30 text-[#ffb800] text-xs font-bold uppercase tracking-wider">
-                  <span className="w-2 h-2 rounded-full bg-[#ffb800] animate-pulse" />
-                  <span>UNIDAD ESPECIALISTA • TIUQUE-TEC</span>
-                </div>
-
-                <h3 className="text-3xl sm:text-4xl font-extrabold text-white font-sans">
-                  Tu copiloto experto en normativa SEC y seguridad
-                </h3>
-
-                <p className="text-slate-300 text-sm leading-relaxed font-sans">
-                  Con Tiuque-Tec a tu lado, cada cálculo eléctrico, revisión de pliegos y procedimiento normativo en terreno cuenta con respaldo técnico estricto, alertas preventivas y un enfoque 100% interactivo.
-                </p>
-
-                <div className="pt-2 flex flex-wrap gap-3 text-xs font-bold">
-                  <span className="px-3 py-1.5 rounded-lg bg-[#050914] border border-[#ffb800]/40 text-[#ffb800]">
-                    Pliegos RIC N°01-19
-                  </span>
-                  <span className="px-3 py-1.5 rounded-lg bg-[#050914] border border-[#9fef00]/40 text-[#9fef00]">
-                    Seguridad Eléctrica
-                  </span>
-                  <span className="px-3 py-1.5 rounded-lg bg-[#050914] border border-rose-500/40 text-rose-400">
-                    Prevención de Riesgos
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Escuadrón de Asistentes */}
-        <section id="escuadron" className="py-20 bg-[#050914] relative z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <span className="text-xs text-[#9fef00] font-bold uppercase tracking-widest block mb-1">
-              ESCUADRÓN DE SOPORTE
-            </span>
-            <h3 className="text-3xl font-extrabold mb-10 text-white font-sans">
-              Tus asistentes virtuales en terreno
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              <div className="bg-[#0a1120] border border-[#ffb800]/30 p-5 rounded-2xl flex flex-col items-center text-center shadow-lg hover:border-[#ffb800] transition">
+              {/* Columna Derecha: Solo el Tiuque */}
+              <div className="lg:col-span-6 flex items-center justify-center pt-2 lg:pt-0">
                 <img
-                  src={iconoContento}
-                  alt="Tiuque-Tec"
-                  className="w-16 h-16 rounded-xl object-cover mb-3 border border-[#ffb800]/40 shadow-md"
+                  src={tiuqueHeroImg}
+                  alt="Tiuque-Tec en operación"
+                  className="w-52 sm:w-72 lg:w-80 h-auto object-contain drop-shadow-[0_14px_28px_rgba(0,0,0,0.85)] transition-transform duration-300"
                 />
-                <h4 className="font-bold text-white text-sm">Tiuque-Tec</h4>
-                <span className="text-[10px] text-[#ffb800] font-bold mb-2 uppercase tracking-wider">
-                  Guía Principal
-                </span>
-                <p className="text-[11px] text-slate-400 font-sans">
-                  Tu experto en seguridad y normativas. ¡Seguridad primero!
-                </p>
-              </div>
-
-              <div className="bg-[#0a1120] border border-[#9fef00]/30 p-5 rounded-2xl flex flex-col items-center text-center shadow-lg hover:border-[#9fef00] transition">
-                <div className="w-16 h-16 rounded-xl bg-[#9fef00]/10 border border-[#9fef00]/40 flex items-center justify-center text-2xl mb-3 shadow-md">
-                  🤖
-                </div>
-                <h4 className="font-bold text-white text-sm">Voltín</h4>
-                <span className="text-[10px] text-[#9fef00] font-bold mb-2 uppercase tracking-wider">
-                  Dron Asistente
-                </span>
-                <p className="text-[11px] text-slate-400 font-sans">
-                  Te explica fórmulas y pasos complejos de forma visual.
-                </p>
-              </div>
-
-              <div className="bg-[#0a1120] border border-rose-500/30 p-5 rounded-2xl flex flex-col items-center text-center shadow-lg hover:border-rose-400 transition">
-                <img
-                  src={iconoAlerta}
-                  alt="Chispa"
-                  className="w-16 h-16 rounded-xl object-cover mb-3 border border-rose-500/40 shadow-md"
-                />
-                <h4 className="font-bold text-white text-sm">Chispa</h4>
-                <span className="text-[10px] text-rose-400 font-bold mb-2 uppercase tracking-wider">
-                  Alerta de Riesgo
-                </span>
-                <p className="text-[11px] text-slate-400 font-sans">
-                  Alertas en tiempo real de fallas y riesgos críticos.
-                </p>
-              </div>
-
-              <div className="bg-[#0a1120] border border-[#9fef00]/30 p-5 rounded-2xl flex flex-col items-center text-center shadow-lg hover:border-[#9fef00] transition">
-                <img
-                  src={iconoInterrogante}
-                  alt="Ohmí"
-                  className="w-16 h-16 rounded-xl object-cover mb-3 border border-[#9fef00]/40 shadow-md"
-                />
-                <h4 className="font-bold text-white text-sm">Ohmí</h4>
-                <span className="text-[10px] text-[#9fef00] font-bold mb-2 uppercase tracking-wider">
-                  Asistente IA
-                </span>
-                <p className="text-[11px] text-slate-400 font-sans">
-                  Consultas sobre tablas y bases de datos técnicas SEC.
-                </p>
               </div>
             </div>
           </div>
         </section>
 
-        <footer className="bg-[#03060c] border-t border-[#9fef00]/30 py-6 px-6 text-xs relative z-10">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-slate-400">
+        <footer className="bg-[#03060c] border-t border-[#9fef00]/30 py-6 px-4 sm:px-6 text-xs relative z-10">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-3 text-slate-400 text-center md:text-left">
             <div className="flex items-center space-x-2">
               <img
                 src={logoImg}
@@ -684,32 +478,33 @@ export default function Auth({ onLoginExitoso }) {
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#9fef0008_1px,transparent_1px),linear-gradient(to_bottom,#9fef0008_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
       {/* Header Superior en Auth */}
-      <header className="sticky top-0 z-50 bg-[#080d1a]/95 backdrop-blur-xl border-b border-[#9fef00]/30 px-6 py-3.5 shadow-[0_0_20px_rgba(159,239,0,0.1)]">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+      <header className="sticky top-0 z-50 bg-[#080d1a]/95 backdrop-blur-xl border-b border-[#9fef00]/30 px-4 sm:px-6 py-3.5 shadow-[0_0_20px_rgba(159,239,0,0.1)]">
+        <div className="max-w-7xl mx-auto flex justify-between items-center gap-2">
           <div
             onClick={() => setVista('landing')}
-            className="flex items-center space-x-3 cursor-pointer group"
+            className="flex items-center space-x-2.5 sm:space-x-3 cursor-pointer group min-w-0"
           >
             <img
               src={logoImg}
               alt="AreaElectrica Logo"
-              className="w-9 h-9 object-contain rounded-xl border border-[#9fef00]/40 group-hover:scale-105 transition"
+              className="w-8 h-8 sm:w-9 sm:h-9 object-contain rounded-xl border border-[#9fef00]/40 group-hover:scale-105 transition shrink-0"
             />
-            <div className="flex flex-col">
-              <span className="text-sm font-black tracking-wider text-white uppercase">
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-black tracking-wider text-white uppercase truncate">
                 AREA<span className="text-[#9fef00]">ELECTRICA</span>
               </span>
-              <span className="text-[9px] text-slate-400 tracking-widest uppercase">
+              <span className="text-[9px] text-slate-400 tracking-widest uppercase hidden sm:block">
                 PORTAL DE ACCESO TÉCNICO
               </span>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={() => setVista('landing')}
-            className="bg-[#0d1527] hover:bg-[#9fef00] text-[#9fef00] hover:text-slate-950 border border-[#9fef00]/40 px-4 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
+            className="bg-[#0d1527] hover:bg-[#9fef00] text-[#9fef00] hover:text-slate-950 border border-[#9fef00]/40 px-3 sm:px-4 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition cursor-pointer shrink-0"
           >
-            ◀ VOLVER AL INICIO
+            ◀ INICIO
           </button>
         </div>
       </header>
@@ -798,7 +593,7 @@ export default function Auth({ onLoginExitoso }) {
 
             {tipoAuth === 'registro' && (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
                     <label className="text-[10px] text-[#9fef00] font-bold uppercase tracking-widest">
                       Nombre
@@ -907,6 +702,7 @@ export default function Auth({ onLoginExitoso }) {
               ? '¿Aún no tienes credenciales? '
               : '¿Ya tienes una cuenta registrada? '}
             <button
+              type="button"
               onClick={() =>
                 setTipoAuth(tipoAuth === 'login' ? 'registro' : 'login')
               }

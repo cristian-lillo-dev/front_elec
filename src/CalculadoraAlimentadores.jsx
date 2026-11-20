@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import logoImg from './assets/logo_s.png';
 
 const SECCIONES_COMERCIALES = [
@@ -25,6 +25,11 @@ export default function CalculadoraAlimentadores({ user, nombreUsuario, onVolver
   const [cosPhi, setCosPhi] = useState(0.93);
   const [current, setCurrent] = useState(26.88);
   const [maxVdrop, setMaxVdrop] = useState(3.0);
+  const [menuAbierto, setMenuAbierto] = useState(false);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, []);
 
   const handleSystemChange = (e) => {
     const sys = e.target.value;
@@ -111,39 +116,27 @@ export default function CalculadoraAlimentadores({ user, nombreUsuario, onVolver
       {/* Grid Técnico de Fondo */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#9fef0008_1px,transparent_1px),linear-gradient(to_bottom,#9fef0008_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
-      {/* Menú Global Unificado */}
-      <header className="sticky top-0 z-50 bg-[#080d1a]/95 backdrop-blur-xl border-b border-[#9fef00]/30 px-6 py-3.5 shadow-[0_0_20px_rgba(159,239,0,0.1)]">
-        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
-          <div className="flex items-center space-x-6">
-            <div onClick={onVolver} className="flex items-center space-x-3 cursor-pointer group">
-              <img src={logoImg} alt="AreaElectrica Logo" className="w-9 h-9 object-contain rounded-xl group-hover:scale-105 transition border border-[#9fef00]/40" />
-              <div className="flex flex-col">
-                <span className="text-sm font-black tracking-wider text-white uppercase">
-                  AREA<span className="text-[#9fef00]">ELECTRICA</span> <span className="text-[#ffb800] text-[10px]">TALLER</span>
-                </span>
-                <span className="text-[9px] text-slate-400 tracking-widest">CALCULADORA NORMATIVA RIC N°03 / N°04</span>
-              </div>
-            </div>
-
-            <nav className="hidden md:flex items-center space-x-2 text-xs">
-              <button
-                onClick={onVolver}
-                className="px-3.5 py-1.5 rounded-xl font-bold text-slate-300 hover:text-[#9fef00] bg-[#0d1527]/70 hover:bg-[#0d1527] border border-slate-800 hover:border-[#9fef00]/40 transition cursor-pointer"
-              >
-                ⚡ PANEL DE ESTUDIO
-              </button>
-              <span className="px-3.5 py-1.5 rounded-xl font-bold bg-[#112614] text-[#9fef00] border border-[#9fef00]/50 shadow-[0_0_12px_rgba(159,239,0,0.15)]">
-                📊 CALCULADORA RIC
+      {/* Menú Global Unificado con Hamburguesa en Móvil */}
+      <header className="sticky top-0 z-50 bg-[#080d1a]/95 backdrop-blur-xl border-b border-[#9fef00]/30 shadow-[0_0_20px_rgba(159,239,0,0.1)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex justify-between items-center gap-3">
+          <div onClick={onVolver} className="flex items-center space-x-3 cursor-pointer group min-w-0">
+            <img src={logoImg} alt="AreaElectrica Logo" className="w-9 h-9 object-contain rounded-xl group-hover:scale-105 transition border border-[#9fef00]/40 shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-black tracking-wider text-white uppercase truncate">
+                AREA<span className="text-[#9fef00]">ELECTRICA</span> <span className="text-[#ffb800] text-[10px]">TALLER</span>
               </span>
-            </nav>
+              <span className="text-[9px] text-slate-400 tracking-widest hidden sm:block">CALCULADORA NORMATIVA RIC N°03 / N°04</span>
+            </div>
           </div>
 
-          <div className="flex items-center space-x-2.5">
-            <div className="hidden sm:flex items-center space-x-2 bg-[#0d1527] border border-[#ffb800]/40 px-3 py-1 rounded-lg text-xs">
+          {/* Acciones Escritorio */}
+          <div className="hidden md:flex items-center space-x-2.5">
+            <div className="flex items-center space-x-2 bg-[#0d1527] border border-[#ffb800]/40 px-3 py-1.5 rounded-xl text-xs">
               <span className="w-2 h-2 rounded-full bg-[#9fef00]" />
               <span className="font-bold text-[#ffb800]">{displayUser}</span>
             </div>
             <button 
+              type="button"
               onClick={onVolver} 
               className="bg-[#112614] hover:bg-[#9fef00] text-[#9fef00] hover:text-slate-950 border border-[#9fef00]/40 px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-md"
             >
@@ -151,14 +144,52 @@ export default function CalculadoraAlimentadores({ user, nombreUsuario, onVolver
             </button>
             {onLogout && (
               <button
+                type="button"
                 onClick={onLogout}
-                className="px-3 h-8 rounded-xl bg-[#0d1527] hover:bg-rose-950/60 border border-slate-700 hover:border-rose-500/60 text-slate-300 hover:text-rose-400 text-xs font-bold transition cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-[#0d1527] hover:bg-rose-950/60 border border-slate-700 hover:border-rose-500/60 text-slate-300 hover:text-rose-400 text-xs font-bold transition cursor-pointer"
               >
                 SALIR ⌁
               </button>
             )}
           </div>
+
+          {/* Botón Hamburguesa Móvil */}
+          <button
+            type="button"
+            aria-label="Abrir menú"
+            aria-expanded={menuAbierto}
+            onClick={() => setMenuAbierto(prev => !prev)}
+            className="md:hidden w-10 h-10 rounded-xl bg-[#0d1527] border border-[#9fef00]/40 text-[#9fef00] flex items-center justify-center text-lg font-bold cursor-pointer hover:bg-[#112614] transition shrink-0"
+          >
+            {menuAbierto ? '✕' : '☰'}
+          </button>
         </div>
+
+        {/* Desplegable Móvil */}
+        {menuAbierto && (
+          <div className="md:hidden bg-[#080d1a] border-t border-[#9fef00]/20 px-4 py-4 flex flex-col gap-3">
+            <div className="flex items-center justify-center space-x-2 bg-[#0d1527] border border-[#ffb800]/40 py-2.5 rounded-xl text-xs">
+              <span className="w-2 h-2 rounded-full bg-[#9fef00]" />
+              <span className="font-bold text-[#ffb800]">{displayUser}</span>
+            </div>
+            <button 
+              type="button"
+              onClick={onVolver} 
+              className="w-full py-3 rounded-xl bg-[#112614] border border-[#9fef00]/40 text-[#9fef00] text-xs font-bold uppercase tracking-wider cursor-pointer"
+            >
+              ◀ VOLVER AL PANEL
+            </button>
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="w-full py-3 rounded-xl bg-rose-950/50 border border-rose-500/40 text-rose-300 text-xs font-bold uppercase tracking-wider cursor-pointer"
+              >
+                SALIR ⌁
+              </button>
+            )}
+          </div>
+        )}
       </header>
 
       <main className="max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8 space-y-6 flex-1 relative z-10">
@@ -185,7 +216,7 @@ export default function CalculadoraAlimentadores({ user, nombreUsuario, onVolver
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-[#9fef00] mb-1">Sistema</label>
                   <select value={systemType} onChange={handleSystemChange} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] outline-none transition cursor-pointer">
@@ -202,7 +233,7 @@ export default function CalculadoraAlimentadores({ user, nombreUsuario, onVolver
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-[#9fef00] mb-1">Tensión Nominal (V)</label>
                   <input type="number" value={voltage} onChange={(e) => setVoltage(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] outline-none transition" />
@@ -213,7 +244,7 @@ export default function CalculadoraAlimentadores({ user, nombreUsuario, onVolver
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-[#9fef00] mb-1">Potencia Activa (W)</label>
                   <input type="number" value={power} onChange={(e) => handlePowerChange(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] outline-none transition" />
@@ -224,7 +255,7 @@ export default function CalculadoraAlimentadores({ user, nombreUsuario, onVolver
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-[#9fef00] mb-1">Corriente de Carga (A)</label>
                   <input type="number" step="0.01" value={current} onChange={(e) => handleCurrentChange(e.target.value)} className="w-full text-xs rounded-lg p-2.5 border-2 border-[#9fef00]/60 bg-[#07130b] text-[#9fef00] font-bold focus:border-[#9fef00] outline-none transition" />
@@ -348,11 +379,11 @@ export default function CalculadoraAlimentadores({ user, nombreUsuario, onVolver
                 <table className="w-full text-xs text-left">
                   <thead className="bg-[#050914] text-slate-400 border-b border-slate-800">
                     <tr>
-                      <th className="p-3">Sección</th>
-                      <th className="p-3">Capacidad RIC N°04</th>
-                      <th className="p-3">Caída (V)</th>
-                      <th className="p-3">Caída (%)</th>
-                      <th className="p-3">Estado</th>
+                      <th className="p-3 whitespace-nowrap">Sección</th>
+                      <th className="p-3 whitespace-nowrap">Capacidad RIC N°04</th>
+                      <th className="p-3 whitespace-nowrap">Caída (V)</th>
+                      <th className="p-3 whitespace-nowrap">Caída (%)</th>
+                      <th className="p-3 whitespace-nowrap">Estado</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800 text-slate-300">
@@ -364,22 +395,44 @@ export default function CalculadoraAlimentadores({ user, nombreUsuario, onVolver
                       const cumpleAmp = cap >= iVal;
                       const isSelected = item.seccion === seccionFinal.seccion;
 
-                      let badge = <span className="px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 text-[10px]">APROBADO</span>;
+                      let badge = (
+                        <span className="inline-block whitespace-nowrap px-2.5 py-1 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 text-[10px]">
+                          APROBADO
+                        </span>
+                      );
                       if (!cumpleAmp) {
-                        badge = <span className="px-2 py-0.5 rounded bg-rose-950/80 text-rose-400 border border-rose-500/40 text-[10px]">I INSUFICIENTE</span>;
+                        badge = (
+                          <span className="inline-block whitespace-nowrap px-2.5 py-1 rounded bg-rose-950/80 text-rose-400 border border-rose-500/40 text-[10px]">
+                            I INSUFICIENTE
+                          </span>
+                        );
                       } else if (!cumpleCaida) {
-                        badge = <span className="px-2 py-0.5 rounded bg-amber-950/80 text-amber-400 border border-amber-500/40 text-[10px]">EXCEDE %ΔV</span>;
+                        badge = (
+                          <span className="inline-block whitespace-nowrap px-2.5 py-1 rounded bg-amber-950/80 text-amber-400 border border-amber-500/40 text-[10px]">
+                            EXCEDE %ΔV
+                          </span>
+                        );
                       }
 
                       return (
-                        <tr key={item.seccion} className={isSelected ? 'bg-[#112614]/80 font-bold text-white border-l-4 border-l-[#9fef00]' : 'hover:bg-[#050914]/50'}>
-                          <td className="p-3 text-white flex items-center gap-1">
-                            {item.seccion} mm² {isSelected && <span className="text-[#ffb800]">★</span>}
+                        <tr
+                          key={item.seccion}
+                          className={
+                            isSelected
+                              ? 'bg-[#112614]/80 font-bold text-white border-l-4 border-l-[#9fef00]'
+                              : 'hover:bg-[#050914]/50'
+                          }
+                        >
+                          <td className="p-3 whitespace-nowrap text-white">
+                            <span className="inline-flex items-center gap-1.5">
+                              <span>{item.seccion} mm²</span>
+                              {isSelected && <span className="text-[#ffb800]">★</span>}
+                            </span>
                           </td>
-                          <td className="p-3">{cap} A</td>
-                          <td className="p-3">{deltaV.toFixed(2)} V</td>
-                          <td className="p-3">{pct.toFixed(2)} %</td>
-                          <td className="p-3">{badge}</td>
+                          <td className="p-3 whitespace-nowrap">{cap} A</td>
+                          <td className="p-3 whitespace-nowrap">{deltaV.toFixed(2)} V</td>
+                          <td className="p-3 whitespace-nowrap">{pct.toFixed(2)} %</td>
+                          <td className="p-3 whitespace-nowrap">{badge}</td>
                         </tr>
                       );
                     })}

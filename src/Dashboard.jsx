@@ -15,10 +15,16 @@ export default function Dashboard({ user, onLogout }) {
   const [unidadesMap, setUnidadesMap] = useState({});
   const [cargandoUnidadesId, setCargandoUnidadesId] = useState(null);
   const [calculadoraActiva, setCalculadoraActiva] = useState(null);
+  const [menuAbierto, setMenuAbierto] = useState(false);
   
   const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
   const [leccionActiva, setLeccionActiva] = useState(null);
   const [sonidoMuteado, setSonidoMuteado] = useState(sfx.isMuted());
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    setMenuAbierto(false);
+  }, [calculadoraActiva, unidadSeleccionada]);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/temas/?ordering=orden`)
@@ -141,55 +147,105 @@ export default function Dashboard({ user, onLogout }) {
       {/* Grid Técnico de Fondo Verde Hacker / Oscuro */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#9fef0008_1px,transparent_1px),linear-gradient(to_bottom,#9fef0008_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
-      {/* Header Estilo HUD con Menú Global, Audio y Nombre del Usuario */}
-      <header className="sticky top-0 z-50 bg-[#080d1a]/95 backdrop-blur-xl border-b border-[#9fef00]/30 px-6 py-3.5 shadow-[0_0_20px_rgba(159,239,0,0.1)]">
-        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
-          <div className="flex items-center space-x-6">
-            <div onClick={handleIrPanel} className="flex items-center space-x-3 cursor-pointer group">
-              <img src={logoImg} alt="AreaElectrica Logo" className="w-9 h-9 object-contain rounded-xl group-hover:scale-105 transition border border-[#9fef00]/40 shadow-[0_0_12px_rgba(159,239,0,0.2)]" />
-              <div className="flex flex-col">
-                <span className="text-sm font-black tracking-wider text-white uppercase">
-                  AREA<span className="text-[#9fef00]">ELECTRICA</span> <span className="text-[#ffb800] text-[10px]">HUD</span>
-                </span>
-                <span className="text-[9px] text-slate-400 tracking-widest">SISTEMA NORMATIVO SEC RIC</span>
-              </div>
+      {/* Header Estilo HUD con Menú Hamburguesa en Móvil */}
+      <header className="sticky top-0 z-50 bg-[#080d1a]/95 backdrop-blur-xl border-b border-[#9fef00]/30 shadow-[0_0_20px_rgba(159,239,0,0.1)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex justify-between items-center gap-3">
+          <div onClick={handleIrPanel} className="flex items-center space-x-3 cursor-pointer group min-w-0">
+            <img src={logoImg} alt="AreaElectrica Logo" className="w-9 h-9 object-contain rounded-xl group-hover:scale-105 transition border border-[#9fef00]/40 shadow-[0_0_12px_rgba(159,239,0,0.2)] shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-black tracking-wider text-white uppercase truncate">
+                AREA<span className="text-[#9fef00]">ELECTRICA</span> <span className="text-[#ffb800] text-[10px]">HUD</span>
+              </span>
+              <span className="text-[9px] text-slate-400 tracking-widest hidden sm:block">SISTEMA NORMATIVO SEC RIC</span>
             </div>
-
-            {/* Menú Global Persistente */}
-            <nav className="hidden md:flex items-center space-x-2 text-xs">
-            
-           
-            </nav>
           </div>
 
-          <div className="flex items-center space-x-2.5">
-            {/* Botón de Sonido Activo / Mute */}
+          {/* Acciones Escritorio */}
+          <div className="hidden md:flex items-center space-x-2.5">
             <button
+              type="button"
+              onClick={handleIrCalculadora}
+              className="px-3.5 py-1.5 rounded-xl bg-[#0d1527] hover:bg-[#112614] border border-[#ffb800]/40 text-[#ffb800] text-xs font-bold transition cursor-pointer"
+            >
+              📊 CALCULADORA RIC
+            </button>
+
+            <button
+              type="button"
               onClick={handleToggleMute}
               title={sonidoMuteado ? 'Activar efectos de sonido' : 'Silenciar efectos de sonido'}
-              className={`px-2.5 py-1 rounded-lg border text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+              className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
                 sonidoMuteado
                   ? 'bg-[#0d1527] border-slate-700 text-slate-400 hover:text-white'
                   : 'bg-[#112614] border-[#9fef00]/40 text-[#9fef00]'
               }`}
             >
               <span>{sonidoMuteado ? '🔇' : '🔊'}</span>
-              <span className="hidden sm:inline text-[10px]">{sonidoMuteado ? 'MUTE' : 'SFX'}</span>
+              <span className="text-[10px]">{sonidoMuteado ? 'MUTE' : 'SFX'}</span>
             </button>
 
             <button 
+              type="button"
               onMouseEnter={() => sfx.playHover()}
               onClick={() => {
                 sfx.playClick();
                 onLogout();
               }}
-              className="px-3 h-8 rounded-xl bg-[#0d1527] hover:bg-rose-950/60 border border-slate-700 hover:border-rose-500/60 flex items-center justify-center text-slate-300 hover:text-rose-400 text-xs font-bold transition-all cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-[#0d1527] hover:bg-rose-950/60 border border-slate-700 hover:border-rose-500/60 flex items-center justify-center text-slate-300 hover:text-rose-400 text-xs font-bold transition-all cursor-pointer"
               title="Cerrar Sesión"
             >
               SALIR
             </button>
           </div>
+
+          {/* Botón Hamburguesa Móvil */}
+          <button
+            type="button"
+            aria-label="Abrir menú"
+            aria-expanded={menuAbierto}
+            onClick={() => setMenuAbierto(prev => !prev)}
+            className="md:hidden w-10 h-10 rounded-xl bg-[#0d1527] border border-[#9fef00]/40 text-[#9fef00] flex items-center justify-center text-lg font-bold cursor-pointer hover:bg-[#112614] transition shrink-0"
+          >
+            {menuAbierto ? '✕' : '☰'}
+          </button>
         </div>
+
+        {/* Desplegable Móvil */}
+        {menuAbierto && (
+          <div className="md:hidden bg-[#080d1a] border-t border-[#9fef00]/20 px-4 py-4 flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={handleIrCalculadora}
+              className="w-full py-3 rounded-xl bg-[#0d1527] border border-[#ffb800]/40 text-[#ffb800] text-xs font-bold uppercase tracking-wider cursor-pointer"
+            >
+              📊 CALCULADORA RIC
+            </button>
+
+            <button
+              type="button"
+              onClick={handleToggleMute}
+              className={`w-full py-3 rounded-xl border text-xs font-bold uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 ${
+                sonidoMuteado
+                  ? 'bg-[#0d1527] border-slate-700 text-slate-400'
+                  : 'bg-[#112614] border-[#9fef00]/40 text-[#9fef00]'
+              }`}
+            >
+              <span>{sonidoMuteado ? '🔇' : '🔊'}</span>
+              <span>{sonidoMuteado ? 'SONIDO SILENCIADO (MUTE)' : 'SONIDO ACTIVO (SFX)'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                sfx.playClick();
+                onLogout();
+              }}
+              className="w-full py-3 rounded-xl bg-rose-950/50 border border-rose-500/40 text-rose-300 text-xs font-bold uppercase tracking-wider cursor-pointer"
+            >
+              SALIR DE LA SESIÓN
+            </button>
+          </div>
+        )}
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-8 w-full space-y-8 flex-1 relative z-10">
@@ -212,7 +268,7 @@ export default function Dashboard({ user, onLogout }) {
             </p>
           </div>
 
-          <div className="bg-[#050914] border border-[#ffb800]/40 px-6 py-4 rounded-xl text-center z-10 shadow-inner shrink-0">
+          <div className="bg-[#050914] border border-[#ffb800]/40 px-6 py-4 rounded-xl text-center z-10 shadow-inner shrink-0 w-full md:w-auto">
             <p className="text-[10px] text-slate-400 uppercase tracking-widest">EXPERIENCIA TOTAL</p>
             <p className="text-xl md:text-2xl font-black text-[#ffb800]">2,450 XP</p>
           </div>
@@ -220,7 +276,7 @@ export default function Dashboard({ user, onLogout }) {
 
         {/* Sección de Vectores de Estudio */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
             <h2 className="text-sm font-bold text-slate-200 tracking-wider flex items-center gap-2 uppercase">
               <span className="text-[#9fef00]">⚡</span> Vectores de Estudio (Normativa SEC RIC)
             </h2>
@@ -326,7 +382,7 @@ export default function Dashboard({ user, onLogout }) {
 
         {/* Utilidades de Taller */}
         <div className="space-y-4 pt-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
             <h2 className="text-sm font-bold text-slate-200 tracking-wider flex items-center gap-2 uppercase">
               <span className="text-[#ffb800]">⚡</span> Utilidades de Taller (Cálculo Eléctrico)
             </h2>
@@ -391,7 +447,7 @@ export default function Dashboard({ user, onLogout }) {
       {/* Asistente Flotante SEC RIC */}
       <AsistenteRIC />
 
-      <footer className="bg-[#050914] border-t border-[#9fef00]/30 py-4 px-6 text-center text-[10px] text-slate-400 z-10 flex justify-between items-center max-w-7xl mx-auto w-full">
+      <footer className="bg-[#050914] border-t border-[#9fef00]/30 py-4 px-4 sm:px-6 text-center text-[10px] text-slate-400 z-10 flex flex-col sm:flex-row justify-between items-center gap-2 max-w-7xl mx-auto w-full">
         <span className="text-[#9fef00] font-bold">NORMATIVA SEC VIGENTE</span>
         <span>AreaElectrica & Tiuque-Tec • Formación que ilumina</span>
         <span>SISTEMA EN LÍNEA</span>
