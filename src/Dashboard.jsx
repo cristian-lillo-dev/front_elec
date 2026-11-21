@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import logoImg from './assets/logo_s.png';
 import DetalleUnidad from './DetalleUnidad';
 import CalculadoraAlimentadores from './CalculadoraAlimentadores';
+import CalculadoraPuestaTierra from './CalculadoraPuestaTierra';
 import AsistenteRIC from './AsistenteRIC';
 import { sfx } from './soundEffects';
 
@@ -109,10 +110,30 @@ export default function Dashboard({ user, onLogout }) {
     setCalculadoraActiva('alimentadores');
   };
 
+  const handleIrCalculadoraPuestaTierra = () => {
+    sfx.playOpenNode();
+    setUnidadSeleccionada(null);
+    setCalculadoraActiva('puesta_tierra');
+  };
+
   if (calculadoraActiva === 'alimentadores') {
     return (
       <>
         <CalculadoraAlimentadores 
+          user={user}
+          nombreUsuario={nombreUsuario}
+          onVolver={handleIrPanel} 
+          onLogout={onLogout}
+        />
+        <AsistenteRIC />
+      </>
+    );
+  }
+
+  if (calculadoraActiva === 'puesta_tierra') {
+    return (
+      <>
+        <CalculadoraPuestaTierra 
           user={user}
           nombreUsuario={nombreUsuario}
           onVolver={handleIrPanel} 
@@ -164,14 +185,6 @@ export default function Dashboard({ user, onLogout }) {
           <div className="hidden md:flex items-center space-x-2.5">
             <button
               type="button"
-              onClick={handleIrCalculadora}
-              className="px-3.5 py-1.5 rounded-xl bg-[#0d1527] hover:bg-[#112614] border border-[#ffb800]/40 text-[#ffb800] text-xs font-bold transition cursor-pointer"
-            >
-              📊 CALCULADORA RIC
-            </button>
-
-            <button
-              type="button"
               onClick={handleToggleMute}
               title={sonidoMuteado ? 'Activar efectos de sonido' : 'Silenciar efectos de sonido'}
               className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
@@ -218,7 +231,15 @@ export default function Dashboard({ user, onLogout }) {
               onClick={handleIrCalculadora}
               className="w-full py-3 rounded-xl bg-[#0d1527] border border-[#ffb800]/40 text-[#ffb800] text-xs font-bold uppercase tracking-wider cursor-pointer"
             >
-              📊 CALCULADORA RIC
+              📊 CALCULADORA ALIMENTADORES
+            </button>
+
+            <button
+              type="button"
+              onClick={handleIrCalculadoraPuestaTierra}
+              className="w-full py-3 rounded-xl bg-[#0d1527] border border-[#9fef00]/40 text-[#9fef00] text-xs font-bold uppercase tracking-wider cursor-pointer"
+            >
+              ⚡ VALIDADOR PUESTA A TIERRA (TS/TP)
             </button>
 
             <button
@@ -386,10 +407,11 @@ export default function Dashboard({ user, onLogout }) {
             <h2 className="text-sm font-bold text-slate-200 tracking-wider flex items-center gap-2 uppercase">
               <span className="text-[#ffb800]">⚡</span> Utilidades de Taller (Cálculo Eléctrico)
             </h2>
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider">4 MÓDULOS DISPONIBLES</span>
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider">5 MÓDULOS DISPONIBLES</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Módulo 1: Alimentadores */}
             <div 
               onMouseEnter={() => sfx.playHover()}
               className="bg-[#0a1120] border-2 border-[#ffb800] hover:border-[#9fef00] p-5 rounded-2xl flex flex-col justify-between transition group shadow-[0_0_15px_rgba(255,184,0,0.15)]"
@@ -410,6 +432,30 @@ export default function Dashboard({ user, onLogout }) {
                 className="mt-5 w-full py-2 bg-[#ffb800] hover:bg-[#e0a100] text-slate-950 text-[11px] font-bold rounded-lg transition uppercase tracking-wider cursor-pointer shadow-md"
               >
                 ABRIR HERRAMIENTA ⚡
+              </button>
+            </div>
+
+            {/* Módulo 2: Puesta a Tierra (TS / TP) */}
+            <div 
+              onMouseEnter={() => sfx.playHover()}
+              className="bg-[#0a1120] border-2 border-[#9fef00] hover:border-[#ffb800] p-5 rounded-2xl flex flex-col justify-between transition group shadow-[0_0_15px_rgba(159,239,0,0.15)]"
+            >
+              <div>
+                <span className="text-[9px] bg-[#112614] text-[#9fef00] px-2 py-0.5 rounded border border-[#9fef00]/50 uppercase font-bold">
+                  RIC N°01 / 06
+                </span>
+                <h4 className="font-bold text-xs text-white group-hover:text-[#9fef00] uppercase tracking-wide mt-2 mb-1">
+                  Puesta a Tierra (TS / TP)
+                </h4>
+                <p className="text-[11px] text-slate-400 leading-normal font-sans">
+                  Validación de resistencia TS, tensión de contacto Vf y reporte TE1.
+                </p>
+              </div>
+              <button 
+                onClick={handleIrCalculadoraPuestaTierra} 
+                className="mt-5 w-full py-2 bg-[#9fef00] hover:bg-[#8cd400] text-slate-950 text-[11px] font-black rounded-lg transition uppercase tracking-wider cursor-pointer shadow-md"
+              >
+                ABRIR VALIDADOR ⚡
               </button>
             </div>
 

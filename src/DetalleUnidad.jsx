@@ -333,7 +333,7 @@ export default function DetalleUnidad({
                 }}
                 className="px-3 py-1.5 rounded-xl bg-[#0d1527] hover:bg-rose-950/60 border border-slate-700 hover:border-rose-500/60 text-slate-300 hover:text-rose-400 text-xs font-bold transition cursor-pointer"
               >
-                SALIR ⌁
+                SALIR 
               </button>
             )}
           </div>
@@ -388,7 +388,7 @@ export default function DetalleUnidad({
                 }}
                 className="w-full py-3 rounded-xl bg-rose-950/50 border border-rose-500/40 text-rose-300 text-xs font-bold uppercase tracking-wider cursor-pointer"
               >
-                SALIR ⌁
+                SALIR
               </button>
             )}
           </div>
